@@ -1,0 +1,398 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* 2XY Brand Colors - Sneaker focused */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Dark blue primary */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    /* Dark blue accent */
+    --accent: 224 71% 50%;
+    --accent-foreground: 0 0% 98%;
+
+    /* Secondary dark blue for gradients */
+    --purple-accent: 230 80% 45%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* Dark blue gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(230 80% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--purple-accent)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--purple-accent)));
+    --gradient-japanese: linear-gradient(45deg, hsl(217 91% 60%), hsl(224 71% 50%), hsl(230 80% 45%));
+
+    /* Shadows for depth */
+    --shadow-elegant: 0 20px 50px -10px hsl(var(--primary) / 0.3);
+    --shadow-glow: 0 0 40px hsl(var(--accent) / 0.4);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark theme for premium sneaker experience */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 6% 10%;
+
+    --accent: 224 71% 50%;
+    --accent-foreground: 0 0% 98%;
+
+    --purple-accent: 230 80% 45%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 217 91% 60%;
+
+    /* Dark blue gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(217 91% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--purple-accent)));
+    --gradient-hero: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(var(--accent)), hsl(var(--purple-accent)));
+    --gradient-japanese: linear-gradient(45deg, hsl(240 10% 3.9%), hsl(217 91% 55%), hsl(224 71% 45%));
+
+    --shadow-elegant: 0 20px 50px -10px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px hsl(var(--accent) / 0.3);
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .theme {
+    --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+    --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* Improve mobile touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    width: 100%;
+    min-width: 320px;
+  }
+
+  /* Prevent horizontal scroll on all elements */
+  #root {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Custom scrollbar for premium feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    /* Improve touch targets */
+    button, a {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Better mobile typography */
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: clamp(1.25rem, 3vw, 2rem);
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+      line-height: 1.4;
+    }
+
+    /* Ensure full width on mobile */
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      max-width: 100vw;
+      width: 100%;
+    }
+  }
+
+  /* Ensure no horizontal scroll on any screen size */
+  @media (max-width: 1024px) {
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+}
+
+@layer components {
+  /* Premium button variants */
+  .btn-hero {
+    @apply bg-gradient-to-r from-primary to-accent text-primary-foreground px-8 py-4 rounded-xl font-medium shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-ghost-premium {
+    @apply bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-lg hover:bg-white/20 transition-all duration-300;
+  }
+
+  /* Mobile-optimized button variants */
+  .btn-mobile {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Loading animations */
+  .skeleton {
+    @apply animate-pulse bg-muted/50 rounded-lg;
+  }
+
+  .loading-dots {
+    @apply inline-flex items-center space-x-1;
+  }
+
+  .loading-dots span {
+    @apply w-2 h-2 bg-current rounded-full animate-bounce;
+  }
+
+  .loading-dots span:nth-child(1) {
+    animation-delay: 0ms;
+  }
+
+  .loading-dots span:nth-child(2) {
+    animation-delay: 150ms;
+  }
+
+  .loading-dots span:nth-child(3) {
+    animation-delay: 300ms;
+  }
+
+  /* Product card hover effects */
+  .product-card {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-elegant;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-accent to-purple-accent bg-clip-text text-transparent;
+  }
+
+  .bg-gradient-japanese {
+    background: var(--gradient-japanese);
+  }
+
+  /* Gradient helpers matching theme tokens */
+  .bg-gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  /* Mobile-specific components */
+  .mobile-menu {
+    @apply fixed inset-0 z-50 bg-background/95 backdrop-blur-md;
+  }
+
+  .mobile-nav-item {
+    @apply block w-full text-left px-4 py-3 text-lg font-medium transition-colors hover:bg-muted/50;
+  }
+
+  /* Mobile-optimized grid layouts */
+  .mobile-grid {
+    @apply grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .mobile-grid-2 {
+    @apply grid grid-cols-2 gap-3 sm:gap-4;
+  }
+
+  /* Mobile-optimized spacing */
+  .mobile-section {
+    @apply py-8 sm:py-12 md:py-16 lg:py-20;
+  }
+
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Full width mobile layout */
+  .mobile-full-width {
+    @apply w-full max-w-full;
+  }
+}
+
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+
+  /* Mobile-specific utilities */
+  .mobile-text-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-text-lg {
+    @apply text-base sm:text-lg;
+  }
+
+  .mobile-text-xl {
+    @apply text-lg sm:text-xl;
+  }
+
+  .mobile-padding {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+
+  .mobile-margin {
+    @apply m-2 sm:m-3 md:m-4;
+  }
+
+  /* Touch-friendly utilities */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .touch-friendly {
+    @apply touch-target flex items-center justify-center;
+  }
+
+  /* Mobile-optimized images */
+  .mobile-image {
+    @apply w-full h-auto object-cover;
+  }
+
+  /* Mobile-optimized cards */
+  .mobile-card {
+    @apply rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  /* Prevent horizontal scroll */
+  .no-horizontal-scroll {
+    @apply max-w-full;
+  }
+
+  /* Full width utilities */
+  .full-width-mobile {
+    @apply w-full max-w-full min-w-0;
+  }
+
+  /* Button text utilities */
+  .button-text-responsive {
+    @apply text-xs sm:text-sm md:text-base;
+  }
+
+  /* Prevent text overflow */
+  .text-no-overflow {
+    @apply truncate overflow-hidden;
+  }
+}
+
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* ---break---
+*/
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ---break---
+*/

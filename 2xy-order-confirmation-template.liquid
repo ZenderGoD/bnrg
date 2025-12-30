@@ -1,0 +1,312 @@
+{% comment %}
+2XY Order Confirmation Email Template
+Replace the existing order confirmation template in Shopify Admin
+{% endcomment %}
+
+Order {{name}} confirmed:
+
+{% assign delivery_method_types = delivery_agreements | map: 'delivery_method_type' | uniq %}
+{% if delivery_method_types.size > 1 %}
+  {% assign has_split_cart = true %}
+{% else %}
+  {% assign has_split_cart = false %}
+{% endif %}
+
+{% capture email_title %}
+  {% if has_pending_payment %}
+    Thank you for your order!
+  {% else %}
+    Thank you for your purchase!
+  {% endif %}
+{% endcapture %}
+
+{% capture email_body %}
+  {% if has_pending_payment %}
+    {% if buyer_action_required %}
+      You'll get a confirmation email after completing your payment.
+    {% else %}
+      Your payment is being processed. You'll get an email when your order is confirmed.
+    {% endif %}
+  {% else %}
+    {% if requires_shipping %}
+    {% case delivery_method %}
+        {% when 'pick-up' %}
+          You'll receive an email when your order is ready for pickup.
+        {% when 'local' %}
+          Hi {{ customer.first_name }}, we're getting your order ready for delivery.
+        {% else %}
+          We're getting your order ready to be shipped. We will notify you when it has been sent.
+      {% endcase %}
+        {% if delivery_instructions != blank  %}
+          <p><b>Delivery information:</b> {{ delivery_instructions }}</p>
+        {% endif %}
+       {% if consolidated_estimated_delivery_time %}
+        {% if has_multiple_delivery_methods %}
+          <h3 class="estimated_delivery__title">Estimated delivery</h3>
+          <p>{{ consolidated_estimated_delivery_time }}</p>
+        {% else %}
+          <p>
+            Estimated delivery <b>{{ consolidated_estimated_delivery_time }}</b>
+          </p>
+        {% endif %}
+       {% endif %}
+    {% endif %}
+  {% endif %}
+{% endcapture %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <title>{{ email_title }} - 2XY</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" type="text/css" href="/assets/notifications/styles.css">
+  <style>
+    /* 2XY Theme Styling */
+    body { 
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .button__cell { 
+      background: linear-gradient(135deg, #000000 0%, #1f2937 100%);
+      border-radius: 8px;
+      padding: 16px 32px;
+    }
+    .button__text {
+      color: #ffffff !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    a, a:hover, a:active, a:visited { 
+      color: #3b82f6; 
+    }
+    .container {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2, h3 {
+      color: #1e3a8a;
+      font-weight: 700;
+    }
+    .shop-name__text a {
+      color: #1e3a8a;
+      font-weight: 800;
+      font-size: 32px;
+      text-decoration: none;
+    }
+    .order-number__text {
+      background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .footer__cell {
+      background: #f8fafc;
+      color: #64748b;
+    }
+    /* Credit System Notification */
+    .credits-earned {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .credits-amount {
+      font-size: 24px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+  <body>
+    <table class="body">
+      <tr>
+        <td>
+          <table class="header row">
+  <tr>
+    <td class="header__cell">
+      <center>
+        <table class="container">
+          <tr>
+            <td>
+              <table class="row">
+                <tr>
+                  <td class="shop-name__cell">
+                    {%- if shop.email_logo_url %}
+                      <img src="{{shop.email_logo_url}}" alt="{{ shop.name }}" width="{{ shop.email_logo_width }}">
+                    {%- else %}
+                      <h1 class="shop-name__text">
+                        <a href="{{shop.url}}">2XY</a>
+                      </h1>
+                      <p style="color: #64748b; margin: 0; font-size: 14px;">Where Style Meets Comfort</p>
+                    {%- endif %}
+                  </td>
+                    <td>
+                      <table class="order-po-number__container">
+                        <tr>
+                          <td class="order-number__cell">
+                            <span class="order-number__text">
+                              Order {{ order_name }}
+                            </span>
+                          </td>
+                        </tr>
+                        {%- if po_number %}
+                            <tr>
+                              <td class="po-number__cell">
+                                <span class="po-number__text">
+                                  PO number #{{ po_number }}
+                                </span>
+                              </td>
+                            </tr>
+                        {%- endif %}
+                      </table>
+                    </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </center>
+    </td>
+  </tr>
+</table>
+
+          <table class="row content">
+  <tr>
+    <td class="content__cell">
+      <center>
+        <table class="container">
+          <tr>
+            <td>
+              
+            <h2>{{ email_title }}</h2>
+            <p>{{ email_body }}</p>
+
+            {% comment %} 2XY Credit System Notification {% endcomment %}
+            {% assign order_total = subtotal_price | plus: tax_price | plus: shipping_price %}
+            {% assign credits_earned = order_total | times: 0.40 | round: 2 %}
+            {% if credits_earned > 0 %}
+              <div class="credits-earned">
+                <h3 style="margin: 0; color: white;">🎉 You Earned Credits!</h3>
+                <p style="margin: 10px 0 0 0;">
+                  <span class="credits-amount">{{ credits_earned | money }}</span><br>
+                  <small>40% cashback added to your 2XY account</small>
+                </p>
+              </div>
+            {% endif %}
+
+            {% assign transaction_count = transactions | size %}
+  {% if transaction_count > 0 %}
+    {% for transaction in transactions %}
+      {% if transaction.show_buyer_pending_payment_instructions? %}
+        <p> {{transaction.buyer_pending_payment_notice}} </p>
+        <p>
+        <table class="row">
+          <tr>
+            {% for instruction in transaction.buyer_pending_payment_instructions %}
+              <td>{{ instruction.header }}</td>
+            {% endfor %}
+            <td>Amount</td>
+          </tr>
+          <tr>
+            {% for instruction in transaction.buyer_pending_payment_instructions %}
+              <td>{{ instruction.value }}</td>
+            {% endfor %}
+            <td>{{transaction.amount | money}}</td>
+          </tr>
+        </table>
+        </p>
+      {% endif %}
+    {% endfor%}
+  {% endif %}
+
+            {% if order_status_url %}
+              <table class="row actions">
+  <tr>
+    <td class="empty-line">&nbsp;</td>
+  </tr>
+  <tr>
+    <td class="actions__cell">
+      <table class="button main-action-cell">
+        <tr>
+          <td class="button__cell"><a href="{{ order_status_url }}" class="button__text">View your order</a></td>
+        </tr>
+      </table>
+        {% if shop.url %}
+    <table class="link secondary-action-cell">
+      <tr>
+        <td class="link__cell">or <a href="{{ shop.url }}">Visit 2XY Store</a></td>
+      </tr>
+    </table>
+{% endif %}
+
+    </td>
+  </tr>
+</table>
+
+            {% else %}
+              {% if shop.url %}
+    <table class="row actions">
+      <tr>
+        <td class="actions__cell">
+          <table class="button main-action-cell">
+            <tr>
+              <td class="button__cell"><a href="{{ shop.url }}" class="button__text">Continue Shopping at 2XY</a></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+{% endif %}
+
+            {% endif %}
+
+            </td>
+          </tr>
+        </table>
+      </center>
+    </td>
+  </tr>
+</table>
+
+          {% comment %} Order summary section continues with existing code... {% endcomment %}
+          {{ 'Order summary section would continue here with the existing Shopify template code' }}
+
+          <table class="row footer">
+  <tr>
+    <td class="footer__cell">
+      <center>
+        <table class="container">
+          <tr>
+            <td>
+              <h3 style="color: #1e3a8a;">2XY - Where Style Meets Comfort</h3>
+              <p class="disclaimer__subtext">
+                Questions? Reply to this email or contact us at 
+                <a href="mailto:{{ shop.email }}">{{ shop.email }}</a>
+              </p>
+              <p style="font-size: 12px; color: #64748b;">
+                Follow us: 
+                <a href="#" style="color: #3b82f6;">Instagram</a> | 
+                <a href="#" style="color: #3b82f6;">Twitter</a> | 
+                <a href="#" style="color: #3b82f6;">TikTok</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </center>
+    </td>
+  </tr>
+</table>
+
+<img src="{{ 'notifications/spacer.png' | shopify_asset_url }}" class="spacer" height="1" />
+
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
