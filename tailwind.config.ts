@@ -119,6 +119,14 @@ export default {
 					'15%, 35%': { transform: 'translateZ(0) rotate(90deg)' },
 					'65%, 85%': { transform: 'translateZ(0) rotate(270deg)' },
 					'100%': { transform: 'translateZ(0) rotate(360deg)' }
+				},
+				'marquee': {
+					from: { transform: 'translateX(0)' },
+					to: { transform: 'translateX(calc(-100% - var(--gap)))' }
+				},
+				'marquee-vertical': {
+					from: { transform: 'translateY(0)' },
+					to: { transform: 'translateY(calc(-100% - var(--gap)))' }
 				}
 			},
 			animation: {
@@ -131,7 +139,9 @@ export default {
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
 				'float': 'float 3s ease-in-out infinite',
 				'shimmer-slide': 'shimmer-slide 3s linear infinite',
-				'spin-around': 'spin-around 3s linear infinite'
+				'spin-around': 'spin-around 3s linear infinite',
+				'marquee': 'marquee var(--duration) linear infinite',
+				'marquee-vertical': 'marquee-vertical var(--duration) linear infinite'
 			}
 		}
 	},

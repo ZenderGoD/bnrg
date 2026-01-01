@@ -20,6 +20,7 @@ import {
 } from '@/lib/checkoutIntegration';
 import { getCustomerToken } from '@/lib/shopify';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 export default function EnhancedCart() {
   const { cart, isLoading, updateQuantity, removeItem } = useCart();
@@ -231,7 +232,7 @@ export default function EnhancedCart() {
                         {item.merchandise?.title}
                       </p>
                       <p className="text-accent font-semibold text-sm sm:text-base">
-                        ${parseFloat(item.cost.totalAmount.amount).toFixed(2)}
+                        {formatCurrency(item.cost.totalAmount.amount, item.cost.totalAmount.currencyCode || "INR")}
                       </p>
                     </div>
 
@@ -325,7 +326,7 @@ export default function EnhancedCart() {
 
               {/* Credits Section */}
               {isLoggedIn && (
-                <div className="space-y-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-accent/5 dark:from-blue-900/20 dark:to-accent/5 border border-blue-200/50 dark:border-blue-800/50 rounded-xl">
+                <div className="space-y-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-accent/5 dark:from-amber-900/20 dark:to-accent/5 border border-amber-200/50 dark:border-amber-800/50 rounded-xl">
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="use-credits" 
@@ -334,11 +335,11 @@ export default function EnhancedCart() {
                     />
                     <label htmlFor="use-credits" className="text-sm font-medium text-foreground flex items-center space-x-2">
                       <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />
-                      <span>Use 2XY Credits</span>
+                      <span>Use MONTEVELORIS Credits</span>
                     </label>
                   </div>
                   
-                  <div className="text-xs sm:text-sm text-muted-foreground">Available: ${customerCredits.balance.toFixed(2)}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Available: {formatCurrency(customerCredits.balance, cart?.cost.totalAmount.currencyCode || "INR")}</div>
 
                   {useCredits && (
                     <div className="space-y-2">
@@ -353,7 +354,7 @@ export default function EnhancedCart() {
                         className="text-sm"
                         disabled={customerCredits.balance <= 0}
                       />
-                      <div className="text-xs text-muted-foreground">Max: ${Math.min(customerCredits.balance, total).toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground">Max: {formatCurrency(Math.min(customerCredits.balance, total), cart?.cost.totalAmount.currencyCode || "INR")}</div>
                     </div>
                   )}
                 </div>
@@ -362,13 +363,13 @@ export default function EnhancedCart() {
               <div className="space-y-3 mb-4 sm:mb-6">
                 <div className="flex justify-between text-sm sm:text-base">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(subtotal, cart.cost.subtotalAmount.currencyCode || "INR")}</span>
                 </div>
                 
                 {useCredits && creditsToApply > 0 && (
                   <div className="flex justify-between text-green-600 text-sm sm:text-base">
-                    <span>2XY Credits Applied</span>
-                    <span>-${creditsToApply.toFixed(2)}</span>
+                    <span>MONTEVELORIS Credits Applied</span>
+                    <span>-{formatCurrency(creditsToApply, cart.cost.subtotalAmount.currencyCode || "INR")}</span>
                   </div>
                 )}
                 
@@ -385,7 +386,7 @@ export default function EnhancedCart() {
                 <div className="border-t border-border pt-3 sm:pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-base sm:text-lg font-bold">Total</span>
-                    <span className="text-lg sm:text-xl font-bold text-accent">${finalTotal.toFixed(2)}</span>
+                    <span className="text-lg sm:text-xl font-bold text-accent">{formatCurrency(finalTotal, cart.cost.totalAmount.currencyCode || "INR")}</span>
                   </div>
                 </div>
               </div>
@@ -428,7 +429,7 @@ export default function EnhancedCart() {
                         'Processing...'
                       ) : (
                         <>
-                          <span>{isLoggedIn ? 'Proceed to Checkout' : 'Checkout as Guest'}</span>
+                          <span>Proceed to Checkout</span>
                           <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                         </>
                       )}
@@ -438,7 +439,7 @@ export default function EnhancedCart() {
 
               {!isLoggedIn && (
                 <motion.div 
-                  className="mt-4 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-accent/5 dark:from-blue-900/20 dark:to-accent/5 border border-blue-200/50 dark:border-blue-800/50 rounded-xl"
+                  className="mt-4 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-accent/5 dark:from-amber-900/20 dark:to-accent/5 border border-amber-200/50 dark:border-amber-800/50 rounded-xl"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}

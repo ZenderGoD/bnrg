@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -49,13 +51,18 @@ const Catalog = () => {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('featured');
 
-  const categories = ['Performance & Sports', 'Lifestyle & Casual', 'Limited Edition & Hype', 'Retro & Classics'];
+  // Fetch dynamic filters from database
+  const filterSettings = useQuery(api.filters.getAllActive);
+  
+  // Extract filter values with fallbacks
+  const categories = filterSettings?.category?.map(f => f.displayName) || ['Performance & Sports', 'Lifestyle & Casual', 'Limited Edition & Hype', 'Retro & Classics'];
+  const brands = filterSettings?.brand?.map(f => f.displayName) || ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', 'AIRN', 'Bisuth', 'My Store'];
+  const colors = filterSettings?.color?.map(f => f.displayName) || ['Black', 'White', 'Blue', 'Red', 'Green', 'Grey', 'Brown', 'Pink'];
+  const sizes = filterSettings?.size?.map(f => f.displayName) || ['6', '7', '8', '9', '10', '11', '12', '13'];
+  const materials = filterSettings?.material?.map(f => f.displayName) || ['Leather', 'Canvas', 'Mesh', 'Synthetic', 'Suede'];
+  const activities = filterSettings?.activity?.map(f => f.displayName) || ['Running', 'Walking', 'Training', 'Casual', 'Sports'];
+  
   const priceRanges = ['₹0 - ₹50', '₹50 - ₹100', '₹100 - ₹200', '₹200 - ₹500', '₹500+'];
-  const sizes = ['6', '7', '8', '9', '10', '11', '12', '13'];
-  const colors = ['Black', 'White', 'Blue', 'Red', 'Green', 'Grey', 'Brown', 'Pink'];
-  const materials = ['Leather', 'Canvas', 'Mesh', 'Synthetic', 'Suede'];
-  const activities = ['Running', 'Walking', 'Training', 'Casual', 'Sports'];
-  const brands = ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', 'AIRN', 'Bisuth', 'My Store'];
 
   useEffect(() => {
     const fetchProducts = async () => {

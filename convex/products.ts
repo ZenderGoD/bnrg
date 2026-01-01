@@ -97,6 +97,7 @@ export const create = mutation({
       title: v.string(),
       price: v.number(),
       availableForSale: v.boolean(),
+      quantity: v.number(),
       selectedOptions: v.optional(v.array(v.object({
         name: v.string(),
         value: v.string(),
@@ -136,6 +137,7 @@ export const update = mutation({
       title: v.string(),
       price: v.number(),
       availableForSale: v.boolean(),
+      quantity: v.number(),
       selectedOptions: v.optional(v.array(v.object({
         name: v.string(),
         value: v.string(),

@@ -9,7 +9,7 @@ import { openaiService } from './openaiService';
 
 interface ChatbotRequest {
   sessionId: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   messageHistory: Array<{
     type: 'user' | 'bot';
     content: string;
@@ -26,7 +26,7 @@ interface ChatbotResponse {
     path: string;
     label: string;
   };
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 // Intent patterns and responses
@@ -124,8 +124,8 @@ const INTENT_PATTERNS = {
 // Response templates
 const RESPONSE_TEMPLATES = {
   greeting: [
-    "Hey there! 👋 Welcome to 2XY! I'm here to help you find the perfect sneakers. What are you looking for today?",
-    "Hello! I'm your 2XY shopping assistant. Whether you need help finding shoes, checking orders, or have questions, I'm here to help!",
+    "Hey there! 👋 Welcome to MONTEVELORIS! I'm here to help you find the perfect sneakers. What are you looking for today?",
+    "Hello! I'm your MONTEVELORIS shopping assistant. Whether you need help finding shoes, checking orders, or have questions, I'm here to help!",
     "Hi! Ready to find some amazing sneakers? I can help you search our collection, check sizes, or answer any questions you have.",
   ],
   
@@ -176,12 +176,22 @@ class ChatbotService {
 
   async processMessage(message: string, request: ChatbotRequest): Promise<ChatbotResponse> {
     try {
-      // First try OpenAI for enhanced understanding
+      // First try OpenRouter for enhanced understanding
       try {
+        const userPreferences = 
+          typeof request.context.userPreferences === 'object' && 
+          request.context.userPreferences !== null &&
+          !Array.isArray(request.context.userPreferences)
+            ? request.context.userPreferences as Record<string, unknown>
+            : undefined;
+        const currentPage = typeof request.context.currentPage === 'string' 
+          ? request.context.currentPage 
+          : undefined;
+
         const aiResponse = await openaiService.processMessage(message, {
           messageHistory: request.messageHistory,
-          userPreferences: request.context.userPreferences,
-          currentPage: request.context.currentPage,
+          userPreferences,
+          currentPage,
         });
         
         // Use AI response to generate better output
@@ -192,7 +202,7 @@ class ChatbotService {
           confidence: aiResponse.confidence,
         };
       } catch (aiError) {
-        console.warn('OpenAI service unavailable, falling back to rule-based system:', aiError);
+        console.warn('OpenRouter service unavailable, falling back to rule-based system:', aiError);
         
         // Fallback to rule-based system
         const intent = this.detectIntent(message);
@@ -206,16 +216,39 @@ class ChatbotService {
       }
     } catch (error) {
       console.error('ChatbotService error:', error);
-      return {
-        message: this.getRandomTemplate('error'),
-        intent: 'error',
-        confidence: 0,
-      };
+      // Better error handling - try to provide a helpful response even on error
+      try {
+        const intent = this.detectIntent(message);
+        const response = await this.generateResponse(message, intent, request);
+        return {
+          ...response,
+          intent,
+          confidence: 0.3,
+        };
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        return {
+          message: "I'm here to help! Could you try asking in a different way? For example:\n• \"Show me sneakers\"\n• \"Browse men's collection\"\n• \"What's in my cart?\"",
+          intent: 'get_help',
+          confidence: 0,
+        };
+      }
     }
   }
 
   private async generateResponseFromAI(
-    aiResponse: any,
+    aiResponse: {
+      intent: string;
+      message: string;
+      searchTerms?: string[];
+      productRequest?: {
+        category?: string;
+        color?: string;
+        brand?: string;
+        priceRange?: { min?: number; max?: number };
+        size?: string;
+      };
+    },
     request: ChatbotRequest
   ): Promise<Omit<ChatbotResponse, 'intent' | 'confidence'>> {
     const { intent, message: aiMessage, searchTerms, productRequest } = aiResponse;
@@ -236,7 +269,13 @@ class ChatbotService {
   private async handleEnhancedProductSearch(
     aiMessage: string,
     searchTerms: string[] = [],
-    productRequest: any = {},
+    productRequest: {
+      category?: string;
+      color?: string;
+      brand?: string;
+      priceRange?: { min?: number; max?: number };
+      size?: string;
+    } = {},
     request: ChatbotRequest
   ): Promise<Omit<ChatbotResponse, 'intent' | 'confidence'>> {
     try {
@@ -320,7 +359,16 @@ class ChatbotService {
     }
   }
 
-  private buildSearchQuery(searchTerms: string[], productRequest: any): string {
+  private buildSearchQuery(
+    searchTerms: string[],
+    productRequest: {
+      category?: string;
+      color?: string;
+      brand?: string;
+      priceRange?: { min?: number; max?: number };
+      size?: string;
+    }
+  ): string {
     const terms = [...searchTerms];
     
     if (productRequest.color) terms.push(productRequest.color);
@@ -332,7 +380,16 @@ class ChatbotService {
     return terms.join(' ');
   }
 
-  private filterProductsByAI(products: ShopifyProduct[], productRequest: any): ShopifyProduct[] {
+  private filterProductsByAI(
+    products: ShopifyProduct[],
+    productRequest: {
+      category?: string;
+      color?: string;
+      brand?: string;
+      priceRange?: { min?: number; max?: number };
+      size?: string;
+    }
+  ): ShopifyProduct[] {
     let filtered = [...products];
     
     // Filter by price range if specified
@@ -455,7 +512,7 @@ class ChatbotService {
 
       case 'credits_info':
         return {
-          message: "Check your 2XY credits and see how you can earn more rewards!",
+          message: "Check your MONTEVELORIS credits and see how you can earn more rewards!",
           navigation: { path: '/credits', label: 'View Credits' },
         };
 
@@ -483,7 +540,7 @@ class ChatbotService {
                 type: 'email',
                 title: 'Email Support',
                 description: 'Get help via email - usually responds within 24 hours',
-                action: 'mailto:support@2xy.store?subject=Customer Support Request'
+                action: 'mailto:support@monteveloris.store?subject=Customer Support Request'
               },
               {
                 type: 'shopify',
@@ -501,7 +558,7 @@ class ChatbotService {
                 type: 'phone',
                 title: 'Phone Support',
                 description: 'Call us during business hours: Mon-Fri 9AM-6PM',
-                action: 'tel:+1-800-2XY-HELP'
+                action: 'tel:+1-800-MONTEVELORIS-HELP'
               }
             ],
             escalated: true
@@ -609,7 +666,7 @@ class ChatbotService {
       
       try {
         // Get products and filter by price
-        const allProducts = await fetchProducts(20);
+        const allProducts = await getAllProducts(20);
         const affordableProducts = allProducts.filter(product => {
           const price = parseFloat(product.priceRange.minVariantPrice.amount);
           return price <= maxPrice;

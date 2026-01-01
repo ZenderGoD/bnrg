@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 interface MobileCategoriesSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedGender?: 'men' | 'women' | null;
+  selectedGender?: 'men' | 'women' | 'kids' | null;
 }
 
 // Sneaker icon component
@@ -70,8 +70,29 @@ const womensCategories = [
   { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic women' }
 ] as const;
 
+const kidsCategories = [
+  { name: 'SUPER-STAR', icon: 'default', searchTerm: 'superstar kids' },
+  { name: 'MARATHON', icon: 'running', searchTerm: 'marathon running kids' },
+  { name: 'STARDAN', icon: 'default', searchTerm: 'classic retro kids' },
+  { name: 'PLATFORM', icon: 'default', searchTerm: 'platform kids' },
+  { name: 'V-STAR', icon: 'default', searchTerm: 'v-shape design kids' },
+  { name: 'SKY-STAR', icon: 'high', searchTerm: 'high-top sky kids' },
+  { name: 'FRANCY', icon: 'high', searchTerm: 'francy style kids' },
+  { name: 'SUPERSTAR', icon: 'default', searchTerm: 'superstar kids' },
+  { name: 'LIGHTSTAR', icon: 'running', searchTerm: 'lightweight kids' },
+  { name: 'BALL STAR', icon: 'high', searchTerm: 'basketball kids' },
+  { name: 'TRUE-STAR', icon: 'high', searchTerm: 'premium luxury kids', badge: 'NEW' },
+  { name: 'RUNNING SOLE', icon: 'running', searchTerm: 'running athletic kids' },
+  { name: 'MID STAR', icon: 'high', searchTerm: 'mid-top kids' },
+  { name: 'PURESTAR', icon: 'default', searchTerm: 'pure white minimalist kids' },
+  { name: 'SLIDE', icon: 'slide', searchTerm: 'slide sandal kids' },
+  { name: 'GGDB CLASSICS', icon: 'default', searchTerm: 'golden goose classic kids' },
+  { name: 'STARTER', icon: 'default', searchTerm: 'starter basic kids' },
+  { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic kids' }
+] as const;
+
 export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: MobileCategoriesSidebarProps) {
-  const [currentView, setCurrentView] = useState<'main' | 'men' | 'women'>('main');
+  const [currentView, setCurrentView] = useState<'main' | 'men' | 'women' | 'kids'>('main');
   const navigate = useNavigate();
 
   // Auto-navigate to selected gender when sidebar opens
@@ -88,12 +109,12 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
   // If selectedGender is provided, we should never show the main view
   const shouldShowMainView = !selectedGender;
 
-  const handleCategoryClick = (category: typeof mensCategories[0] | typeof womensCategories[0]) => {
+  const handleCategoryClick = (category: typeof mensCategories[0] | typeof womensCategories[0] | typeof kidsCategories[0]) => {
     navigate(`/catalog?search=${encodeURIComponent(category.searchTerm)}`);
     onClose();
   };
 
-  const handleGenderSelect = (gender: 'men' | 'women') => {
+  const handleGenderSelect = (gender: 'men' | 'women' | 'kids') => {
     setCurrentView(gender);
   };
 
@@ -106,6 +127,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
   const getCurrentCategories = () => {
     if (currentView === 'men') return mensCategories;
     if (currentView === 'women') return womensCategories;
+    if (currentView === 'kids') return kidsCategories;
     return [];
   };
 
@@ -113,6 +135,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
     switch (currentView) {
       case 'men': return "Men's Categories";
       case 'women': return "Women's Categories";
+      case 'kids': return "Kids' Categories";
       default: return 'Categories';
     }
   };
@@ -212,6 +235,24 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     </motion.button>
 
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleGenderSelect('kids')}
+                      className="w-full flex items-center justify-between p-4 rounded-lg bg-muted/60 hover:bg-muted/80 border border-border/40 hover:border-primary/30 transition-all duration-200 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-primary">
+                          <SneakerIcon variant="default" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="font-medium text-foreground">Kids' Collection</h3>
+                          <p className="text-sm text-muted-foreground">18 categories</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </motion.button>
+
                     {/* Quick Links */}
                     <div className="pt-4 border-t border-border/30 mt-6">
                       <h4 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Quick Links</h4>
@@ -258,7 +299,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                         >
                           <div className="flex items-center gap-3">
                             <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                              <SneakerIcon variant={category.icon as any} />
+                              <SneakerIcon variant={category.icon as 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel'} />
                             </div>
                             <div className="text-left">
                               <div className="flex items-center gap-2">

@@ -1,7 +1,9 @@
-// Convex API integration for 2XY sneaker store
+// Convex API integration for MONTEVELORIS sneaker store
 import { ConvexReactClient } from "convex/react";
 // Import Convex generated API
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { sanitizeConvexError } from "./errorHandler";
 
 // Initialize Convex client
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL || "");
@@ -45,9 +47,12 @@ export interface User {
   displayName: string;
   phone?: string;
   acceptsMarketing: boolean;
+  role?: "customer" | "admin" | "manager";
   creditsBalance: number;
   creditsEarned: number;
   creditsPending: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface Cart {
@@ -80,6 +85,8 @@ export interface Order {
   financialStatus: string;
   creditsEarned: number;
   creditsApplied: number;
+  createdAt: number;
+  updatedAt?: number;
 }
 
 export interface CreditTransaction {
@@ -113,7 +120,7 @@ export const products = {
   },
   
   getById: (id: string) => {
-    return convex.query(api.products.getById, { id: id as any });
+    return convex.query(api.products.getById, { id: id as Id<"products"> });
   },
   
   search: (query: string, limit?: number) => {
@@ -128,7 +135,7 @@ export const users = {
   },
   
   getById: (id: string) => {
-    return convex.query(api.users.getById, { id: id as any });
+    return convex.query(api.users.getById, { id: id as Id<"users"> });
   },
   
   register: async (data: {
@@ -138,14 +145,19 @@ export const users = {
     lastName: string;
     acceptsMarketing: boolean;
   }) => {
-    const passwordHash = await hashPassword(data.password);
-    return convex.mutation(api.auth.register, {
-      email: data.email,
-      passwordHash,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      acceptsMarketing: data.acceptsMarketing,
-    });
+    try {
+      const passwordHash = await hashPassword(data.password);
+      return await convex.mutation(api.auth.register, {
+        email: data.email,
+        passwordHash,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        acceptsMarketing: data.acceptsMarketing,
+      });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
   },
   
   update: (id: string, data: {
@@ -153,19 +165,30 @@ export const users = {
     lastName?: string;
     phone?: string;
     acceptsMarketing?: boolean;
+    role?: "customer" | "admin" | "manager";
   }) => {
-    return convex.mutation(api.users.update, {
-      id: id as any,
-      ...data,
-    });
+    try {
+      return convex.mutation(api.users.update, {
+        id: id as Id<"users">,
+        ...data,
+      });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
   },
 };
 
 // Auth API
 export const auth = {
   login: async (email: string, password: string) => {
-    const passwordHash = await hashPassword(password);
-    return convex.mutation(api.auth.login, { email, passwordHash });
+    try {
+      const passwordHash = await hashPassword(password);
+      return await convex.mutation(api.auth.login, { email, passwordHash });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
   },
   
   register: async (data: {
@@ -175,14 +198,19 @@ export const auth = {
     lastName: string;
     acceptsMarketing: boolean;
   }) => {
-    const passwordHash = await hashPassword(data.password);
-    return convex.mutation(api.auth.register, {
-      email: data.email,
-      passwordHash,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      acceptsMarketing: data.acceptsMarketing,
-    });
+    try {
+      const passwordHash = await hashPassword(data.password);
+      return await convex.mutation(api.auth.register, {
+        email: data.email,
+        passwordHash,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        acceptsMarketing: data.acceptsMarketing,
+      });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
   },
   
   logout: () => {
@@ -206,7 +234,7 @@ export const auth = {
 // Cart API
 export const cart = {
   getByUserId: (userId: string) => {
-    return convex.query(api.cart.getByUserId, { userId: userId as any });
+    return convex.query(api.cart.getByUserId, { userId: userId as Id<"users"> });
   },
   
   getBySessionId: (sessionId: string) => {
@@ -215,15 +243,15 @@ export const cart = {
   
   getOrCreate: (userId?: string, sessionId?: string) => {
     return convex.mutation(api.cart.getOrCreate, {
-      userId: userId ? (userId as any) : undefined,
+      userId: userId ? (userId as Id<"users">) : undefined,
       sessionId,
     });
   },
   
   addItem: (cartId: string, productId: string, variantId: string, quantity: number) => {
     return convex.mutation(api.cart.addItem, {
-      cartId: cartId as any,
-      productId: productId as any,
+      cartId: cartId as Id<"carts">,
+      productId: productId as Id<"products">,
       variantId,
       quantity,
     });
@@ -231,8 +259,8 @@ export const cart = {
   
   updateItemQuantity: (cartId: string, productId: string, variantId: string, quantity: number) => {
     return convex.mutation(api.cart.updateItemQuantity, {
-      cartId: cartId as any,
-      productId: productId as any,
+      cartId: cartId as Id<"carts">,
+      productId: productId as Id<"products">,
       variantId,
       quantity,
     });
@@ -240,25 +268,25 @@ export const cart = {
   
   removeItem: (cartId: string, productId: string, variantId: string) => {
     return convex.mutation(api.cart.removeItem, {
-      cartId: cartId as any,
-      productId: productId as any,
+      cartId: cartId as Id<"carts">,
+      productId: productId as Id<"products">,
       variantId,
     });
   },
   
   clear: (cartId: string) => {
-    return convex.mutation(api.cart.clear, { cartId: cartId as any });
+    return convex.mutation(api.cart.clear, { cartId: cartId as Id<"carts"> });
   },
 };
 
 // Orders API
 export const orders = {
   getByUserId: (userId: string) => {
-    return convex.query(api.orders.getByUserId, { userId: userId as any });
+    return convex.query(api.orders.getByUserId, { userId: userId as Id<"users"> });
   },
   
   getById: (id: string) => {
-    return convex.query(api.orders.getById, { id: id as any });
+    return convex.query(api.orders.getById, { id: id as Id<"orders"> });
   },
   
   create: (data: {
@@ -276,10 +304,10 @@ export const orders = {
     creditsApplied: number;
   }) => {
     return convex.mutation(api.orders.create, {
-      userId: data.userId as any,
+      userId: data.userId as Id<"users">,
       items: data.items.map(item => ({
         ...item,
-        productId: item.productId as any,
+        productId: item.productId as Id<"products">,
       })),
       totalPrice: data.totalPrice,
       currencyCode: data.currencyCode,
@@ -291,25 +319,79 @@ export const orders = {
 // Credits API
 export const credits = {
   getByUserId: (userId: string) => {
-    return convex.query(api.credits.getByUserId, { userId: userId as any });
+    return convex.query(api.credits.getByUserId, { userId: userId as Id<"users"> });
   },
   
   getTransactions: (userId: string) => {
-    return convex.query(api.credits.getTransactions, { userId: userId as any });
+    return convex.query(api.credits.getTransactions, { userId: userId as Id<"users"> });
   },
   
   share: (userId: string, amount: number) => {
     return convex.mutation(api.credits.share, {
-      userId: userId as any,
+      userId: userId as Id<"users">,
       amount,
     });
   },
   
   redeemGiftCard: (userId: string, code: string) => {
     return convex.mutation(api.credits.redeemGiftCard, {
-      userId: userId as any,
+      userId: userId as Id<"users">,
       code,
     });
+  },
+};
+
+// Homepage API
+export const homepage = {
+  getHero: () => {
+    return convex.query(api.homepage.getHero);
+  },
+  
+  getCategoryCards: () => {
+    return convex.query(api.homepage.getCategoryCards);
+  },
+  
+  updateHero: async (data: {
+    videos?: string[];
+    heroImage?: string;
+  }) => {
+    try {
+      return await convex.mutation(api.homepage.updateHero, data);
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
+  },
+  
+  upsertCategoryCard: async (data: {
+    id?: string;
+    title: string;
+    handle: string;
+    image: string;
+    description?: string;
+    order?: number;
+    isActive?: boolean;
+  }) => {
+    try {
+      return await convex.mutation(api.homepage.upsertCategoryCard, {
+        ...data,
+        id: data.id ? (data.id as Id<"homepageContent">) : undefined,
+      });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
+  },
+  
+  deleteCategoryCard: async (id: string) => {
+    try {
+      return await convex.mutation(api.homepage.deleteCategoryCard, {
+        id: id as Id<"homepageContent">,
+      });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
   },
 };
 

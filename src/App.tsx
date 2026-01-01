@@ -16,20 +16,24 @@ import { Chatbot } from "@/components/Chatbot";
 import Index from "./pages/Index";
 import Men from "./pages/Men";
 import Women from "./pages/Women";
+import Kids from "./pages/Kids";
 import Cart from "./pages/Cart";
 import Product from "./pages/Product";
-import Credits from "./pages/Credits";
 import Search from "./pages/Search";
 import Profile from "./pages/Profile";
 import Catalog from "./pages/Catalog";
+import Admin from "./pages/Admin";
+import UserChats from "./pages/UserChats";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
 // Component to handle route-based preloader
 function AppWithRoutes() {
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(() => {
     // Only show preloader on initial load/manual reload
     // Check if this is a fresh page load (not navigation)
@@ -47,6 +51,8 @@ function AppWithRoutes() {
     setIsLoading(false);
   };
 
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   return (
     <AnimatePresence mode="wait">
       {isLoading ? (
@@ -59,19 +65,22 @@ function AppWithRoutes() {
               <Route path="/" element={<Index />} />
               <Route path="/men" element={<Men />} />
               <Route path="/women" element={<Women />} />
+              <Route path="/kids" element={<Kids />} />
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/search" element={<Search />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/users/:userId/chats" element={<UserChats />} />
               <Route path="/product/:handle" element={<Product />} />
               <Route path="/cart" element={<Cart />} />
-              <Route path="/credits" element={<Credits />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
-          <Footer />
-          <Chatbot />
+          {!isAdminPage && <Footer />}
+          {!isAdminPage && <Chatbot />}
         </div>
       )}
     </AnimatePresence>

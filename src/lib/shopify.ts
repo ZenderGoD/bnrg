@@ -3,6 +3,8 @@
 
 import { ConvexReactClient } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import type { Product, User } from "./api";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL || "");
 
@@ -168,8 +170,8 @@ export async function createCart(): Promise<Cart> {
     id: `local-cart-${Date.now()}`,
     lines: { edges: [] },
     cost: {
-      totalAmount: { amount: "0.00", currencyCode: "USD" },
-      subtotalAmount: { amount: "0.00", currencyCode: "USD" },
+      totalAmount: { amount: "0.00", currencyCode: "INR" },
+      subtotalAmount: { amount: "0.00", currencyCode: "INR" },
     },
     checkoutUrl: "/checkout",
   };
@@ -218,7 +220,7 @@ export async function addToCart(
       cost: {
         totalAmount: {
           amount: (quantity * price).toFixed(2),
-          currencyCode: "USD",
+          currencyCode: "INR",
         },
       },
     };
@@ -263,7 +265,7 @@ export async function removeFromCart(cartId: string, lineId: string): Promise<Ca
 
 // ---- Product helpers backed by Convex ----
 
-function mapConvexProduct(p: any): ShopifyProduct {
+function mapConvexProduct(p: Product): ShopifyProduct {
   return {
     id: p._id,
     title: p.title,
@@ -276,7 +278,7 @@ function mapConvexProduct(p: any): ShopifyProduct {
       },
     },
     images: {
-      edges: (p.images || []).map((img: any, idx: number) => ({
+      edges: (p.images || []).map((img, idx) => ({
         node: {
           id: `${p._id}-img-${idx}`,
           url: img.url,
@@ -285,7 +287,7 @@ function mapConvexProduct(p: any): ShopifyProduct {
       })),
     },
     variants: {
-      edges: (p.variants || []).map((v: any) => ({
+      edges: (p.variants || []).map((v) => ({
         node: {
           id: v.id,
           title: v.title,
@@ -336,7 +338,7 @@ export async function getProduct(handle: string): Promise<ShopifyProduct | null>
 
 export async function getProductById(id: string): Promise<ShopifyProduct | null> {
   try {
-    const p = await convex.query(api.products.getById, { id: id as any });
+    const p = await convex.query(api.products.getById, { id: id as Id<"products"> });
     return p ? mapConvexProduct(p) : null;
   } catch (error) {
     console.error('Error fetching product by ID:', error);
@@ -377,19 +379,19 @@ export function getCustomerToken(): { accessToken: string } | null {
 
 export async function getCustomer(accessToken: string): Promise<ShopifyCustomer | null> {
   try {
-    const user = await convex.query(api.users.getById, { id: accessToken as any });
+    const user = await convex.query(api.users.getById, { id: accessToken as Id<"users"> });
     if (!user) return null;
 
     return {
       id: accessToken,
-      email: (user as any).email,
-      firstName: (user as any).firstName ?? "",
-      lastName: (user as any).lastName ?? "",
-      displayName: (user as any).displayName ?? "",
-      phone: (user as any).phone,
-      acceptsMarketing: !!(user as any).acceptsMarketing,
-      createdAt: new Date((user as any).createdAt || Date.now()).toISOString(),
-      updatedAt: new Date((user as any).updatedAt || Date.now()).toISOString(),
+      email: user.email,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      displayName: user.displayName ?? "",
+      phone: user.phone,
+      acceptsMarketing: !!user.acceptsMarketing,
+      createdAt: new Date(user.createdAt || Date.now()).toISOString(),
+      updatedAt: new Date(user.updatedAt || Date.now()).toISOString(),
       tags: [],
     };
   } catch (error) {
@@ -403,37 +405,37 @@ export async function getCustomerOrders(
   first = 10,
 ): Promise<ShopifyOrder[]> {
   try {
-    const list = await convex.query(api.orders.getByUserId, { userId: accessToken as any });
+    const list = await convex.query(api.orders.getByUserId, { userId: accessToken as Id<"users"> }) as ConvexOrder[] | null | undefined;
 
-    return (list || []).slice(0, first).map((o: any) => ({
-    id: o._id,
-    orderNumber: o.orderNumber,
-    totalPrice: {
-      amount: o.totalPrice.toFixed(2),
-      currencyCode: o.currencyCode || "USD",
-    },
-    processedAt: new Date(o.createdAt || Date.now()).toISOString(),
-    fulfillmentStatus: o.fulfillmentStatus || "unfulfilled",
-    financialStatus: o.financialStatus || "pending",
-    lineItems: {
-      edges: (o.items || []).map((item: any) => ({
-        node: {
-          title: item.title,
-          quantity: item.quantity,
-          variant: {
-            id: item.variantId,
+    return (list || []).slice(0, first).map((o) => ({
+      id: o._id,
+      orderNumber: o.orderNumber,
+      totalPrice: {
+        amount: o.totalPrice.toFixed(2),
+        currencyCode: o.currencyCode || "USD",
+      },
+      processedAt: new Date(o.createdAt || Date.now()).toISOString(),
+      fulfillmentStatus: o.fulfillmentStatus || "unfulfilled",
+      financialStatus: o.financialStatus || "pending",
+      lineItems: {
+        edges: (o.items || []).map((item) => ({
+          node: {
             title: item.title,
-            image: item.image
-              ? {
-                  url: item.image,
-                  altText: item.title,
-                }
-              : undefined,
+            quantity: item.quantity,
+            variant: {
+              id: item.variantId,
+              title: item.title,
+              image: item.image
+                ? {
+                    url: item.image,
+                    altText: item.title,
+                  }
+                : undefined,
+            },
           },
-        },
-      })),
-    },
-  }));
+        })),
+      },
+    }));
   } catch (error) {
     console.error('Error fetching customer orders:', error);
     return [];

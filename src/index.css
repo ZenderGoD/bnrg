@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* 2XY Brand Colors - Sneaker focused */
+    /* MONTEVELORIS Brand Colors - Sneaker focused */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
 
@@ -18,16 +18,16 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Dark blue primary */
-    --primary: 217 91% 60%;
+    /* Amber primary */
+    --primary: 43 96% 56%;
     --primary-foreground: 0 0% 98%;
 
-    /* Dark blue accent */
-    --accent: 224 71% 50%;
+    /* Amber accent */
+    --accent: 43 96% 48%;
     --accent-foreground: 0 0% 98%;
 
-    /* Secondary dark blue for gradients */
-    --purple-accent: 230 80% 45%;
+    /* Secondary amber for gradients */
+    --purple-accent: 43 96% 40%;
 
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -40,15 +40,15 @@ All colors MUST be HSL.
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 217 91% 60%;
+    --ring: 43 96% 56%;
 
     --radius: 0.75rem;
 
-    /* Dark blue gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(230 80% 55%));
+    /* Amber gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(43 96% 50%));
     --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--purple-accent)));
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--purple-accent)));
-    --gradient-japanese: linear-gradient(45deg, hsl(217 91% 60%), hsl(224 71% 50%), hsl(230 80% 45%));
+    --gradient-japanese: linear-gradient(45deg, hsl(43 96% 56%), hsl(43 96% 48%), hsl(43 96% 40%));
 
     /* Shadows for depth */
     --shadow-elegant: 0 20px 50px -10px hsl(var(--primary) / 0.3);
@@ -65,7 +65,7 @@ All colors MUST be HSL.
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 43 96% 56%;
   }
 
   .dark {
@@ -82,10 +82,10 @@ All colors MUST be HSL.
     --primary: 0 0% 98%;
     --primary-foreground: 240 6% 10%;
 
-    --accent: 224 71% 50%;
+    --accent: 43 96% 48%;
     --accent-foreground: 0 0% 98%;
 
-    --purple-accent: 230 80% 45%;
+    --purple-accent: 43 96% 40%;
 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -98,25 +98,25 @@ All colors MUST be HSL.
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 217 91% 60%;
+    --ring: 43 96% 56%;
 
-    /* Dark blue gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(217 91% 55%));
+    /* Amber gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(43 96% 50%));
     --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--purple-accent)));
     --gradient-hero: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(var(--accent)), hsl(var(--purple-accent)));
-    --gradient-japanese: linear-gradient(45deg, hsl(240 10% 3.9%), hsl(217 91% 55%), hsl(224 71% 45%));
+    --gradient-japanese: linear-gradient(45deg, hsl(240 10% 3.9%), hsl(43 96% 50%), hsl(43 96% 40%));
 
     --shadow-elegant: 0 20px 50px -10px hsl(0 0% 0% / 0.5);
     --shadow-glow: 0 0 40px hsl(var(--accent) / 0.3);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 43 96% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 43 96% 56%;
   }
   .theme {
     --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
@@ -374,6 +374,16 @@ All colors MUST be HSL.
   /* Prevent text overflow */
   .text-no-overflow {
     @apply truncate overflow-hidden;
+  }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 

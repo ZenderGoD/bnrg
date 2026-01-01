@@ -46,7 +46,7 @@ export async function getCustomerCredits(_accessToken?: string): Promise<Custome
   const userId = localStorage.getItem("user_id");
   if (userId) {
     try {
-      const credits = await convex.query(api.credits.getByUserId, { userId: userId as any });
+      const credits = await convex.query(api.credits.getByUserId, { userId: userId as Id<"users"> });
       if (credits) {
         return credits;
       }
@@ -73,8 +73,8 @@ export async function getCreditTransactions(_accessToken?: string): Promise<Cred
   const userId = localStorage.getItem("user_id");
   if (userId) {
     try {
-      const transactions = await convex.query(api.credits.getTransactions, { userId: userId as any });
-      return (transactions || []).map((t: any) => ({
+      const transactions = await convex.query(api.credits.getTransactions, { userId: userId as Id<"users"> });
+      return (transactions || []).map((t) => ({
         id: t._id,
         amount: t.amount,
         type: t.type,
@@ -103,7 +103,7 @@ export async function createShareableCoupon(
 ): Promise<ShareableCoupon> {
   try {
     const code = await convex.mutation(api.credits.share, {
-      userId: customerId as any,
+      userId: customerId as Id<"users">,
       amount,
     });
     
@@ -125,12 +125,15 @@ export async function createShareableCoupon(
       const coupons = stored ? JSON.parse(stored) : [];
       coupons.push(coupon);
       localStorage.setItem(COUPONS_KEY, JSON.stringify(coupons));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
     
     return coupon;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating shareable coupon:', error);
-    throw new Error(error?.message || 'Failed to create shareable coupon');
+    const message = error instanceof Error ? error.message : 'Failed to create shareable coupon';
+    throw new Error(message);
   }
 }
 

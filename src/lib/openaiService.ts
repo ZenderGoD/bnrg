@@ -1,4 +1,6 @@
-// OpenAI integration for enhanced chatbot responses
+// OpenRouter integration using OpenAI SDK
+import OpenAI from 'openai';
+
 interface OpenAIResponse {
   message: string;
   intent: string;
@@ -14,22 +16,56 @@ interface OpenAIResponse {
 }
 
 class OpenAIService {
+  private openai: OpenAI | null = null;
   private apiKey: string;
-  private baseUrl = 'https://api.openai.com/v1';
 
   constructor() {
     // Use environment variable only - no hardcoded keys
-    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
+    this.apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '';
+    
+    // Debug logging
+    console.log('🔍 Environment check:', {
+      hasApiKey: !!this.apiKey,
+      keyLength: this.apiKey?.length || 0,
+      keyPrefix: this.apiKey?.substring(0, 10) || 'none',
+      allEnvKeys: Object.keys(import.meta.env).filter(k => k.includes('OPENROUTER') || k.includes('OPENAI'))
+    });
+    
     if (!this.apiKey) {
-      console.warn('OpenAI API key not found in environment variables');
+      console.warn('⚠️ OpenRouter API key not found in environment variables (VITE_OPENROUTER_API_KEY)');
+      console.warn('Chatbot will use rule-based fallback instead of AI');
+      console.warn('Make sure .env file is in the project root and dev server is restarted');
+    } else {
+      console.log('✅ OpenRouter API key found, AI chatbot enabled');
     }
+  }
+
+  private getClient(): OpenAI {
+    if (!this.apiKey) {
+      throw new Error('OpenRouter API key is missing. Please set VITE_OPENROUTER_API_KEY in your environment variables.');
+    }
+    if (!this.openai && typeof window !== 'undefined') {
+      this.openai = new OpenAI({
+        apiKey: this.apiKey,
+        baseURL: 'https://openrouter.ai/api/v1',
+        dangerouslyAllowBrowser: true, // Required for browser usage with OpenRouter
+        defaultHeaders: {
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'MONTEVELORIS Shopping Assistant',
+        },
+      });
+    }
+    if (!this.openai) {
+      throw new Error('OpenAI client not initialized');
+    }
+    return this.openai;
   }
 
   async processMessage(
     userMessage: string,
     context: {
       messageHistory: Array<{ type: 'user' | 'bot'; content: string }>;
-      userPreferences?: Record<string, any>;
+      userPreferences?: Record<string, unknown>;
       currentPage?: string;
     }
   ): Promise<OpenAIResponse> {
@@ -37,23 +73,21 @@ class OpenAIService {
       const systemPrompt = this.createSystemPrompt();
       const conversationHistory = this.formatConversationHistory(context.messageHistory);
       
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...conversationHistory,
-            { role: 'user', content: userMessage }
-          ],
-          max_tokens: 300,
-          temperature: 0.7,
-          functions: [
-            {
+      console.log('🤖 Calling OpenRouter API with model: openai/gpt-4o-mini');
+      
+      const response = await this.getClient().chat.completions.create({
+        model: 'openai/gpt-4o-mini', // Using GPT-4o-mini (faster and cheaper than GPT-4)
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...conversationHistory,
+          { role: 'user', content: userMessage }
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+        tools: [
+          {
+            type: 'function',
+            function: {
               name: 'analyze_user_request',
               description: 'Analyze user request and extract intent and product details',
               parameters: {
@@ -125,40 +159,57 @@ class OpenAIService {
                 required: ['intent', 'message', 'confidence']
               }
             }
-          ],
-          function_call: { name: 'analyze_user_request' }
-        })
+          }
+        ],
+        tool_choice: { type: 'function', function: { name: 'analyze_user_request' } }
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const functionCall = data.choices[0]?.message?.function_call;
+      const message = response.choices[0]?.message;
+      const toolCalls = message?.tool_calls;
       
-      if (functionCall && functionCall.name === 'analyze_user_request') {
-        const result = JSON.parse(functionCall.arguments);
-        return {
-          message: result.message || 'I can help you with that!',
-          intent: result.intent || 'search_products',
-          searchTerms: result.searchTerms || [],
-          productRequest: result.productRequest,
-          confidence: result.confidence || 0.5
-        };
+      if (toolCalls && toolCalls.length > 0) {
+        const toolCall = toolCalls[0];
+        if (toolCall.type === 'function' && toolCall.function.name === 'analyze_user_request') {
+          const result = JSON.parse(toolCall.function.arguments);
+          return {
+            message: result.message || 'I can help you with that!',
+            intent: result.intent || 'search_products',
+            searchTerms: result.searchTerms || [],
+            productRequest: result.productRequest,
+            confidence: result.confidence || 0.5
+          };
+        }
       }
 
       // Fallback if function calling doesn't work
       return this.fallbackResponse(userMessage);
 
     } catch (error) {
-      console.error('OpenAI Service Error:', error);
+      console.error('❌ OpenRouter Service Error:', error);
+      
+      // More detailed error logging
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        // Check for specific error types
+        if (error.message.includes('API key') || error.message.includes('401') || error.message.includes('Unauthorized')) {
+          console.error('🔑 Authentication failed - API key may be invalid or expired');
+        } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+          console.error('🚫 Access forbidden - Check API key permissions');
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          console.error('🌐 Network error - Check internet connection and OpenRouter service status');
+        } else if (error.message.includes('model') || error.message.includes('invalid')) {
+          console.error('🤖 Model error - The model "openai/gpt-4o-mini" may not be available or you may need credits');
+        }
+      }
+      
       return this.fallbackResponse(userMessage);
     }
   }
 
   private createSystemPrompt(): string {
-    return `You are a helpful shopping assistant for 2XY, a premium sneaker store. Your role is to:
+    return `You are a helpful shopping assistant for MONTEVELORIS, a premium sneaker store. Your role is to:
 
 1. Help customers find products they're looking for
 2. Provide information about sneakers, sizing, and availability
@@ -167,7 +218,7 @@ class OpenAIService {
 5. Be friendly, knowledgeable, and concise
 
 Store Information:
-- 2XY specializes in premium sneakers for men and women
+- MONTEVELORIS specializes in premium sneakers for men and women
 - Categories: Athletic/Sports, Lifestyle/Casual, Limited Edition, Retro/Classics
 - Brands: Nike, Adidas, Jordan, Puma, Reebok, Converse, Vans, and more
 - Price ranges: Budget-friendly to premium ($50-$300+)
@@ -201,7 +252,7 @@ Examples:
     // Simple keyword matching as fallback
     if (lowerMessage.includes('hi') || lowerMessage.includes('hello')) {
       return {
-        message: "Hey there! 👋 Welcome to 2XY! I'm your AI shopping assistant and I'm here to help you find the perfect sneakers. What can I help you with today?",
+        message: "Hey there! 👋 Welcome to MONTEVELORIS! I'm your AI shopping assistant and I'm here to help you find the perfect sneakers. What can I help you with today?",
         intent: 'greeting',
         confidence: 0.8
       };
@@ -209,7 +260,7 @@ Examples:
     
     if (lowerMessage.includes('help')) {
       return {
-        message: "I'm here to help! I can assist you with:\n\n🔍 **Product Discovery** - Find sneakers by brand, color, style\n📏 **Size & Fit** - Sizing guides and recommendations\n🛒 **Shopping** - Cart management and checkout help\n💳 **Credits** - 2XY rewards and credit system\n📱 **Account** - Login, profile, and account management\n\nIf I can't solve your issue, I'll connect you with our Shopify customer support team!",
+        message: "I'm here to help! I can assist you with:\n\n🔍 **Product Discovery** - Find sneakers by brand, color, style\n📏 **Size & Fit** - Sizing guides and recommendations\n🛒 **Shopping** - Cart management and checkout help\n💳 **Credits** - MONTEVELORIS rewards and credit system\n📱 **Account** - Login, profile, and account management\n\nIf I can't solve your issue, I'll connect you with our Shopify customer support team!",
         intent: 'get_help',
         confidence: 0.8
       };
@@ -273,16 +324,18 @@ Examples:
     return relevantTerms.length > 0 ? relevantTerms : words.slice(0, 3);
   }
 
-  // Test connection to OpenAI
+  // Test connection to OpenRouter
   async testConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
+      // Simple test by attempting to create a minimal completion
+      await this.getClient().chat.completions.create({
+        model: 'openai/gpt-4o-mini',
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 1,
       });
-      return response.ok;
-    } catch {
+      return true;
+    } catch (error) {
+      console.error('Connection test failed:', error);
       return false;
     }
   }

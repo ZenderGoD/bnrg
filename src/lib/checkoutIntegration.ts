@@ -29,9 +29,10 @@ export async function createEnhancedCheckout(args: {
   creditsToApply?: number;
   discountCodes?: string[];
 }): Promise<string | null> {
-  console.warn("createEnhancedCheckout is a stub in Convex mode. Args:", args);
-  // For now just send the user to the credits page so the flow continues.
-  return "/credits";
+  // Route to checkout page
+  return "/checkout";
 }
+
+
 
 

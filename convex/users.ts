@@ -20,9 +20,12 @@ export const getById = query({
     const user = await ctx.db.get(args.id);
     if (!user) return null;
     
-    // Don't return password hash
+    // Don't return password hash, ensure role has default
     const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return {
+      ...userWithoutPassword,
+      role: userWithoutPassword.role || "customer",
+    };
   },
 });
 
@@ -54,6 +57,7 @@ export const register = mutation({
       lastName: args.lastName,
       displayName: `${args.firstName} ${args.lastName}`,
       acceptsMarketing: args.acceptsMarketing,
+      role: "customer", // Default role
       creditsBalance: 0,
       creditsEarned: 0,
       creditsPending: 0,
@@ -73,6 +77,7 @@ export const update = mutation({
     lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     acceptsMarketing: v.optional(v.boolean()),
+    role: v.optional(v.union(v.literal("customer"), v.literal("admin"), v.literal("manager"))),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
@@ -103,6 +108,80 @@ export const updatePassword = mutation({
       passwordHash: args.passwordHash,
       updatedAt: Date.now(),
     });
+  },
+});
+
+// Get users by role
+export const getByRole = query({
+  args: { role: v.union(v.literal("customer"), v.literal("admin"), v.literal("manager")) },
+  handler: async (ctx, args) => {
+    const users = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", args.role))
+      .collect();
+    
+    // Also include users without role if querying for "customer" (for backward compatibility)
+    if (args.role === "customer") {
+      const allUsers = await ctx.db.query("users").collect();
+      const usersWithoutRole = allUsers.filter(u => !u.role || u.role === undefined);
+      return [...users, ...usersWithoutRole];
+    }
+    
+    return users;
+  },
+});
+
+// Delete user (admin/cleanup)
+export const deleteUser = mutation({
+  args: {
+    id: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+
+// Get all users (admin)
+export const getAll = query({
+  args: {
+    limit: v.optional(v.number()),
+    role: v.optional(v.union(v.literal("customer"), v.literal("admin"), v.literal("manager"))),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 100;
+    let users = await ctx.db.query("users").collect();
+    
+    if (args.role) {
+      users = users.filter((u) => (u.role || "customer") === args.role);
+    }
+    
+    return users.slice(0, limit).map((user) => {
+      // Don't return password hash
+      const { passwordHash, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+  },
+});
+
+// Migration: Set default role for existing users without role
+export const migrateUserRoles = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const allUsers = await ctx.db.query("users").collect();
+    let updatedCount = 0;
+    
+    for (const user of allUsers) {
+      // TypeScript might complain, but at runtime we need to check
+      if (!("role" in user) || user.role === undefined) {
+        await ctx.db.patch(user._id, {
+          role: "customer" as const,
+          updatedAt: Date.now(),
+        });
+        updatedCount++;
+      }
+    }
+    
+    return { updatedCount, message: `Updated ${updatedCount} user(s) with default role` };
   },
 });
 

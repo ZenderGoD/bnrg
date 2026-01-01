@@ -103,7 +103,14 @@ export default function Product() {
   const getVariantsByColor = () => {
     if (!product) return [];
     
-    const colorGroups: { [key: string]: any[] } = {};
+    const colorGroups: { [key: string]: Array<{
+      node: {
+        id: string;
+        title: string;
+        availableForSale: boolean;
+        selectedOptions: Array<{ name: string; value: string }>;
+      };
+    }> } = {};
     product.variants.edges.forEach(edge => {
       const variant = edge.node;
       const color = variant.selectedOptions?.find(opt => opt.name.toLowerCase() === 'color')?.value || 'Default';
@@ -315,50 +322,52 @@ export default function Product() {
             </div>
 
             {/* Thumbnail Images */}
-            <div className="grid grid-cols-4 gap-4">
-              {images.slice(0, 4).map((image, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`aspect-square cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImage === index 
-                      ? 'border-primary ring-2 ring-primary/20' 
-                      : 'border-transparent hover:border-muted-foreground/30'
-                  }`}
-                  onClick={() => setSelectedImage(index)}
-                >
-                  <img
-                    src={image.node.url}
-                    alt={`${product.title} view ${index + 1}`}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder.svg';
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Image Navigation */}
             {images.length > 1 && (
-              <div className="flex justify-between mt-4">
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {images.map((image, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex-shrink-0 w-20 h-20 cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                      selectedImage === index 
+                        ? 'border-primary ring-2 ring-primary/20' 
+                        : 'border-transparent hover:border-muted-foreground/30'
+                    }`}
+                    onClick={() => setSelectedImage(index)}
+                  >
+                    <img
+                      src={image.node.url}
+                      alt={`${product.title} view ${index + 1}`}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Image Navigation Arrows */}
+            {images.length > 1 && (
+              <div className="flex justify-between items-center mt-4">
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setSelectedImage(Math.max(0, selectedImage - 1))}
-                  disabled={selectedImage === 0}
+                  onClick={() => setSelectedImage(selectedImage === 0 ? images.length - 1 : selectedImage - 1)}
+                  className="rounded-full"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground self-center">
+                <span className="text-sm text-muted-foreground">
                   {selectedImage + 1} / {images.length}
                 </span>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setSelectedImage(Math.min(images.length - 1, selectedImage + 1))}
-                  disabled={selectedImage === images.length - 1}
+                  onClick={() => setSelectedImage(selectedImage === images.length - 1 ? 0 : selectedImage + 1)}
+                  className="rounded-full"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>

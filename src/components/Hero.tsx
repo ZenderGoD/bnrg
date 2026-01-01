@@ -2,137 +2,157 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Marquee } from '@/components/ui/marquee';
 import { useState, useEffect } from 'react';
-import heroVideoImage from '@/assets/hero-video-bg.jpg';
+import { getAllProducts, ShopifyProduct } from '@/lib/shopify';
 
 export function Hero() {
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  
-  // Video URLs - Update these with your actual Shopify file URLs
-  const videoUrls = [
-    '/Intro.mp4',
-    'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/8518887-uhd_4096_1680_25fps.mp4',
-    'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/Halluo_Video_I_want_a_sho_c_3990065366058680375.mp4'
-  ];
+  const [products, setProducts] = useState<ShopifyProduct[]>([]);
 
   useEffect(() => {
-    // Only cycle through videos if there are multiple videos
-    if (videoUrls.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentVideoIndex((prev) => (prev + 1) % videoUrls.length);
-      }, 8000); // Change video every 8 seconds
+    const fetchProducts = async () => {
+      try {
+        const allProducts = await getAllProducts(20);
+        setProducts(allProducts);
+      } catch (error) {
+        console.error('Failed to fetch products for hero marquee:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
-      return () => clearInterval(interval);
-    }
-  }, [videoUrls.length]);
+  // Get product images for marquee
+  const productImages = products
+    .map(product => product.images?.edges?.[0]?.node?.url)
+    .filter(Boolean) as string[];
+
+  // Split images into rows for 3D marquee (10 columns: 3 left + 4 center + 3 right)
+  const totalColumns = 10;
+  const rows = Array.from({ length: totalColumns }, (_, i) => {
+    const start = Math.floor((productImages.length / totalColumns) * i);
+    const end = Math.floor((productImages.length / totalColumns) * (i + 1));
+    return productImages.slice(start, end);
+  });
+
+  const ProductImage = ({ imageUrl, index }: { imageUrl: string; index: number }) => (
+    <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-lg overflow-hidden border border-border/50">
+      <img
+        src={imageUrl}
+        alt="Product"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+
   return (
-    <section className="relative min-h-screen overflow-hidden">
-      {/* Background with gradient transition to video */}
-      <div className="absolute inset-0">
-        {/* Gradient Background */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-hero"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        
-        {/* Video Background */}
-        {videoUrls.map((videoUrl, index) => (
-          <motion.div
-            key={index}
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: currentVideoIndex === index ? 0.8 : 0 
-            }}
-            transition={{ duration: 1 }}
-          >
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              style={{ opacity: 0.6 }}
-            >
-              <source src={videoUrl} type="video/mp4" />
-              {/* Fallback to hero image if video fails */}
-              <div 
-                className="w-full h-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${heroVideoImage})` }}
-              />
-            </video>
-            <div className="absolute inset-0 bg-black/30"></div>
-          </motion.div>
-        ))}
-        
-        {/* Animated background shapes */}
-        <motion.div
-          className="absolute top-20 left-10 w-16 h-16 sm:w-32 sm:h-32 bg-accent/10 rounded-full blur-xl"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3]
+    <section className="relative min-h-screen overflow-x-clip overflow-y-hidden flex flex-col">
+      {/* Background */}
+      <div className="absolute inset-0 bg-[#F4F1EA] dark:bg-background" />
+
+      {/* 3D Marquee */}
+      <div className="absolute inset-0 flex items-center justify-center z-10 [perspective:300px]">
+        <div
+          className="flex flex-row items-center gap-8"
+          style={{
+            transform:
+              "translateX(-100px) translateY(0px) translateZ(-100px) rotateX(20deg) rotateY(-10deg) rotateZ(20deg)",
           }}
-          transition={{ duration: 4, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-24 h-24 sm:w-48 sm:h-48 bg-primary/10 rounded-full blur-xl"
-          animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.6, 0.3, 0.6]
-          }}
-          transition={{ duration: 6, repeat: Infinity }}
-        />
-        
-        {/* Floating elements */}
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-accent/30 rounded-full"
-            style={{
-              left: `${20 + i * 15}%`,
-              top: `${30 + Math.sin(i) * 20}%`,
-            }}
-            animate={{
-              y: [-10, 10, -10],
-              opacity: [0.3, 0.8, 0.3],
-            }}
-            transition={{
-              duration: 3 + i * 0.5,
-              repeat: Infinity,
-              delay: i * 0.3,
-            }}
-          />
-        ))}
+        >
+          {productImages.length > 0 ? (
+            <>
+              {/* Left 3 columns */}
+              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[0].map((imageUrl, i) => (
+                  <ProductImage key={`left1-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[1].map((imageUrl, i) => (
+                  <ProductImage key={`left2-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[2].map((imageUrl, i) => (
+                  <ProductImage key={`left3-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              {/* Center 4 columns */}
+              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[3].map((imageUrl, i) => (
+                  <ProductImage key={`center1-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[4].map((imageUrl, i) => (
+                  <ProductImage key={`center2-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[5].map((imageUrl, i) => (
+                  <ProductImage key={`center3-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[6].map((imageUrl, i) => (
+                  <ProductImage key={`center4-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              {/* Right 3 columns */}
+              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[7].map((imageUrl, i) => (
+                  <ProductImage key={`right1-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[8].map((imageUrl, i) => (
+                  <ProductImage key={`right2-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
+                {rows[9].map((imageUrl, i) => (
+                  <ProductImage key={`right3-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+            </>
+          ) : (
+            <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-lg bg-muted/20 animate-pulse" />
+          )}
+        </div>
+
+        {/* Gradient overlays */}
+        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b"></div>
+        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t"></div>
+        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r"></div>
+        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l"></div>
       </div>
 
-      {/* Hero Content - Responsive positioning */}
-      <div className="absolute bottom-8 sm:bottom-16 md:bottom-20 left-4 sm:left-8 md:left-8 z-10 max-w-xs sm:max-w-md md:max-w-xl px-4 sm:px-0">
+      {/* Hero Content - Centered */}
+      <div className="flex-1 flex items-center justify-center z-10 px-4 sm:px-8">
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="text-center max-w-4xl"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 text-white leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-6 text-foreground leading-tight">
             <span className="gradient-text">Step Into</span>
             <br />
-            <span className="text-white">Excellence</span>
+            <span className="text-foreground">Excellence</span>
           </h1>
           
           <motion.p
-            className="text-sm sm:text-base md:text-lg text-white/80 mb-6 leading-relaxed max-w-sm sm:max-w-md"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
+            className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             Discover the world's most exclusive sneaker collection.
           </motion.p>
 
           <motion.div
-            className="flex flex-col gap-3 sm:flex-row sm:gap-4"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
+            className="flex flex-col gap-4 sm:flex-row sm:gap-4 justify-center"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -156,9 +176,10 @@ export function Hero() {
         </motion.div>
       </div>
 
+
       {/* Scroll Indicator */}
       <motion.div
-        className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2"
+        className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-10"
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >

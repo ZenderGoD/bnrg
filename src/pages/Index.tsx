@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Hero } from '@/components/Hero';
 import { ProductGrid } from '@/components/ProductGrid';
-import { InteractiveComfortSection } from '@/components/InteractiveComfortSection';
+// import { InteractiveComfortSection } from '@/components/InteractiveComfortSection';
 import { getAllProducts, getProductsByCollection, ShopifyProduct } from '@/lib/shopify';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +21,9 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 8;
+  
+  // Fetch category cards from Convex
+  const categoryCards = useQuery(api.homepage.getCategoryCards);
 
   // Handle Shopify login redirect
   useEffect(() => {
@@ -92,7 +97,7 @@ const Index = () => {
 
       {/* Category Cards Section */}
       <motion.section
-        className="py-8 sm:py-12 bg-secondary/50 w-full"
+        className="py-8 sm:py-12 bg-[#F4F1EA] dark:bg-black w-full"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -101,32 +106,7 @@ const Index = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           {/* Premium Sneaker Collections Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
-          {[
-            { 
-              title: 'Performance & Sports', 
-              handle: 'performance-sports', 
-              image: '/athletic-performance.jpg',
-              description: 'Athletic excellence redefined'
-            },
-            { 
-              title: 'Lifestyle & Casual', 
-              handle: 'lifestyle-casual', 
-              image: '/premium-lifestyle.jpg',
-              description: 'Everyday sophistication'
-            },
-            { 
-              title: 'Limited Edition & Hype', 
-              handle: 'limited-edition-hype', 
-              image: '/limited-editions.jpg',
-              description: 'Exclusive drops & collaborations'
-            },
-            { 
-              title: 'Retro & Classics', 
-              handle: 'retro-classics', 
-              image: '/street-fashion.jpg',
-              description: 'Timeless heritage designs'
-            },
-          ].map((item, index) => (
+          {(categoryCards || []).map((item, index) => (
               <motion.div
                 key={item.title}
                 className="group cursor-pointer"
@@ -189,25 +169,25 @@ const Index = () => {
       />
 
       {/* Interactive Comfort Section - Full Width */}
-      <InteractiveComfortSection />
+      {/* <InteractiveComfortSection /> */}
 
       {/* Combined Collections Showcase */}
       <motion.section
-        className="py-12 sm:py-16 relative overflow-hidden"
+        className="py-12 sm:py-16 relative overflow-hidden bg-[#F4F1EA] dark:bg-black"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        {/* Animated Gradient Background - Blue and Black theme */}
+        {/* Animated Gradient Background - Amber and Black theme */}
         <motion.div 
           className="absolute inset-0"
           animate={{
             background: [
-              "linear-gradient(45deg, rgb(59, 130, 246, 0.2), rgb(0, 0, 0, 0.3), rgb(59, 130, 246, 0.2))",
-              "linear-gradient(135deg, rgb(0, 0, 0, 0.3), rgb(59, 130, 246, 0.2), rgb(0, 0, 0, 0.3))",
-              "linear-gradient(225deg, rgb(59, 130, 246, 0.2), rgb(0, 0, 0, 0.3), rgb(59, 130, 246, 0.2))",
-              "linear-gradient(315deg, rgb(0, 0, 0, 0.3), rgb(59, 130, 246, 0.2), rgb(0, 0, 0, 0.3))",
+              "linear-gradient(45deg, rgb(217, 119, 6, 0.2), rgb(0, 0, 0, 0.3), rgb(217, 119, 6, 0.2))",
+              "linear-gradient(135deg, rgb(0, 0, 0, 0.3), rgb(217, 119, 6, 0.2), rgb(0, 0, 0, 0.3))",
+              "linear-gradient(225deg, rgb(217, 119, 6, 0.2), rgb(0, 0, 0, 0.3), rgb(217, 119, 6, 0.2))",
+              "linear-gradient(315deg, rgb(0, 0, 0, 0.3), rgb(217, 119, 6, 0.2), rgb(0, 0, 0, 0.3))",
             ]
           }}
           transition={{
@@ -219,7 +199,18 @@ const Index = () => {
         
         {/* Enhanced Background Gradients */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/15 to-primary/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+        <div 
+          className="absolute inset-0 block dark:hidden"
+          style={{
+            backgroundImage: 'linear-gradient(to top, #F4F1EA 0%, rgba(244, 241, 234, 0.95) 10%, rgba(244, 241, 234, 0.85) 20%, rgba(244, 241, 234, 0.7) 30%, rgba(244, 241, 234, 0.5) 45%, rgba(244, 241, 234, 0.3) 60%, rgba(244, 241, 234, 0.15) 75%, rgba(244, 241, 234, 0.05) 90%, transparent 100%)'
+          }}
+        />
+        <div 
+          className="absolute inset-0 hidden dark:block"
+          style={{
+            backgroundImage: 'linear-gradient(to top, #000000 0%, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.85) 20%, rgba(0, 0, 0, 0.7) 30%, rgba(0, 0, 0, 0.5) 45%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.15) 75%, rgba(0, 0, 0, 0.05) 90%, transparent 100%)'
+          }}
+        />
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl relative z-10 space-y-8">
           {/* Men's Collection */}

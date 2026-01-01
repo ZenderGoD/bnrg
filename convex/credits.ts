@@ -91,7 +91,7 @@ export const share = mutation({
     }
     
     // Generate unique gift card code
-    const code = `2XY-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    const code = `MONTEVELORIS-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     
     const now = Date.now();
     const expiresAt = now + 365 * 24 * 60 * 60 * 1000; // 1 year

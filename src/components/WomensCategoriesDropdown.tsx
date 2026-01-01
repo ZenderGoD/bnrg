@@ -87,7 +87,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="absolute top-full left-0 mt-2 w-[800px] bg-background/95 backdrop-blur-xl border-2 border-border/30 rounded-xl shadow-2xl z-50 overflow-hidden"
+          className="absolute top-full right-0 mt-2 w-[90vw] max-w-[800px] sm:w-[600px] md:w-[800px] bg-background/95 backdrop-blur-xl border-2 border-border/30 rounded-xl shadow-2xl z-50 overflow-hidden"
         >
           <div className="p-6">
             {/* Header */}
@@ -130,7 +130,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                     >
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
-                          <SneakerIcon variant={category.icon as any} />
+                          <SneakerIcon variant={category.icon as 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel'} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">

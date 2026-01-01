@@ -18,7 +18,7 @@ interface ProductGridProps {
 export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, hasMore = true, isLoadingMore = false, showLoadMore = true }: ProductGridProps) {
   if (isLoading) {
     return (
-      <section className="py-12">
+      <section className="py-12 bg-[#F4F1EA] dark:bg-black">
         {title && (
           <div className="text-center mb-12">
             <div className="skeleton h-8 w-64 mx-auto mb-4 rounded" />
@@ -32,15 +32,15 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
 
   if (!products.length) {
     return (
-      <section className="py-12">
+      <section className="py-12 bg-[#F4F1EA] dark:bg-black">
         <div className="text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-2xl font-bold text-foreground mb-4">No Products Found</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-amber-600 mb-4">No Products Found</h2>
+            <p className="text-gray-900 dark:text-amber-600 max-w-md mx-auto">
               We couldn't find any products at the moment. Please check back later or explore other categories.
             </p>
           </motion.div>
@@ -50,7 +50,7 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
   }
 
   return (
-    <section className="py-12 bg-secondary/30">
+    <section className="py-12 bg-[#F4F1EA] dark:bg-black">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         {title && (
           <motion.div
@@ -59,11 +59,11 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-amber-600 mb-4">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+              <p className="text-gray-900 dark:text-amber-600 text-lg max-w-3xl mx-auto">
                 {subtitle}
               </p>
             )}

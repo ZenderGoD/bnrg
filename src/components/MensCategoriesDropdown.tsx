@@ -85,160 +85,18 @@ export function MensCategoriesDropdown({ isVisible }: MensCategoriesDropdownProp
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="absolute top-full left-0 mt-2 w-[800px] bg-background/95 backdrop-blur-xl border-2 border-border/30 rounded-xl shadow-2xl z-50 overflow-hidden"
+          className="absolute top-full right-0 mt-2 w-[90vw] max-w-[800px] sm:w-[600px] md:w-[800px] bg-background/95 backdrop-blur-xl border-2 border-border/30 rounded-xl shadow-2xl z-50 overflow-hidden"
         >
           <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-foreground">Men's Categories</h3>
-                <p className="text-sm text-muted-foreground mt-1">Discover our complete collection</p>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/men')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            <div className="flex items-center justify-center py-12">
+              <motion.h3
+                className="text-2xl font-bold text-foreground"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                See All
-              </motion.button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              {/* Categories Grid */}
-              <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Categories</h4>
-                <div className="grid grid-cols-2 gap-1">
-                  {mensCategories.map((category, index) => (
-                    <motion.button
-                      key={category.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                      whileHover={{ scale: 1.02, x: 4 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleCategoryClick(category)}
-                      onMouseEnter={() => setHoveredCategory(category.name)}
-                      onMouseLeave={() => setHoveredCategory(null)}
-                      className={`flex items-center justify-between p-3 rounded-lg text-left transition-all duration-200 group ${
-                        hoveredCategory === category.name
-                          ? 'bg-primary/15 border-primary/30 shadow-sm'
-                          : 'hover:bg-muted/80 border-transparent'
-                      } border`}
-                    >
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
-                          <SneakerIcon variant={category.icon as any} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-medium uppercase tracking-wide transition-colors ${
-                              hoveredCategory === category.name ? 'text-primary' : 'text-foreground'
-                            }`}>
-                              {category.name}
-                            </span>
-                            {category.badge && (
-                              <span className="px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded uppercase">
-                                {category.badge}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <motion.div
-                        initial={false}
-                        animate={{ rotate: hoveredCategory === category.name ? 90 : 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="text-muted-foreground group-hover:text-primary"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </motion.div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Featured Products */}
-              <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Featured</h4>
-                {isLoading ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="aspect-square bg-muted animate-pulse rounded-lg" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    {products.slice(0, 4).map((product, index) => {
-                      const relatedCategory = mensCategories[index % mensCategories.length];
-                      return (
-                        <motion.div
-                          key={product.id}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.1 + index * 0.05 }}
-                          whileHover={{ scale: 1.05, y: -2 }}
-                          className="group cursor-pointer bg-muted/60 rounded-lg overflow-hidden border border-border/40 hover:border-primary/30 transition-all duration-200"
-                          onClick={() => navigate(`/product/${product.handle}`)}
-                        >
-                          <div className="aspect-square relative overflow-hidden">
-                            <div
-                              className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                              style={{
-                                backgroundImage: `url(${product.images?.edges?.[0]?.node?.url || '/placeholder.svg'})`
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                            
-                            {/* Category Badge */}
-                            <div className="absolute top-2 left-2 px-2 py-1 bg-background/95 backdrop-blur-md rounded-md border border-border/30">
-                              <span className="text-[10px] font-medium text-foreground uppercase tracking-wide">
-                                {relatedCategory.name}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="p-3">
-                            <h5 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                              {product.title}
-                            </h5>
-                            <p className="text-sm text-muted-foreground font-medium mt-1">
-                              ₹{parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}
-                            </p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                )}
-                
-                {!isLoading && products.length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    <p className="text-sm">No products available</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-6 pt-4 border-t border-border/50 bg-muted/20 -mx-6 px-6 py-4 mt-6">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Discover premium sneakers for every style and occasion
-                </p>
-                <div className="flex items-center gap-2">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/catalog')}
-                    className="text-xs text-primary hover:text-primary/80 font-medium"
-                  >
-                    View All Products →
-                  </motion.button>
-                </div>
-              </div>
+                Coming Soon
+              </motion.h3>
             </div>
           </div>
         </motion.div>

@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { chatbotService } from '@/lib/chatbotService';
 import { useCart } from '@/contexts/CartContext';
 import { isCustomerLoggedIn } from '@/lib/shopify';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { auth } from '@/lib/api';
+import type { Id } from '../../convex/_generated/dataModel';
 
 export interface ChatMessage {
   id: string;
@@ -15,7 +19,32 @@ export interface ChatMessage {
     variant?: 'default' | 'outline';
   }>;
   metadata?: {
-    products?: any[];
+    products?: Array<{
+      id: string;
+      title: string;
+      handle: string;
+      priceRange: {
+        minVariantPrice: {
+          amount: string;
+          currencyCode: string;
+        };
+      };
+      images: {
+        edges: Array<{
+          node: {
+            url: string;
+            altText: string | null;
+          };
+        }>;
+      };
+      variants?: {
+        edges?: Array<{
+          node?: {
+            id: string;
+          };
+        }>;
+      };
+    }>;
     intent?: string;
     confidence?: number;
   };
@@ -29,7 +58,7 @@ interface ChatbotState {
   context: {
     lastSearchQuery?: string;
     currentCategory?: string;
-    userPreferences?: Record<string, any>;
+    userPreferences?: Record<string, unknown>;
   };
 }
 
@@ -55,7 +84,7 @@ function generateSessionId(): string {
 
 function chatbotReducer(state: ChatbotState, action: ChatbotAction): ChatbotState {
   switch (action.type) {
-    case 'ADD_MESSAGE':
+    case 'ADD_MESSAGE': {
       const newMessage = action.payload;
       const newUnreadCount = newMessage.type === 'bot' 
         ? state.unreadCount + 1 
@@ -66,6 +95,7 @@ function chatbotReducer(state: ChatbotState, action: ChatbotAction): ChatbotStat
         messages: [...state.messages, newMessage],
         unreadCount: newUnreadCount
       };
+    }
 
     case 'SET_LOADING':
       return {
@@ -119,6 +149,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(chatbotReducer, initialState);
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const saveChat = useMutation(api.chats.saveChat);
 
   // Persist messages to localStorage with better error handling
   useEffect(() => {
@@ -130,19 +161,19 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(savedMessages);
         // Only load recent messages (last 24 hours) and from current session
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const recentMessages = parsed.filter((msg: any) => 
+        const recentMessages = (parsed as Array<ChatMessage & { timestamp: string | Date }>).filter((msg) => 
           new Date(msg.timestamp) > oneDayAgo
         );
         
         if (recentMessages.length > 0) {
           dispatch({ 
             type: 'LOAD_PERSISTED_MESSAGES', 
-            payload: recentMessages.map((msg: any) => ({
+            payload: recentMessages.map((msg) => ({
               ...msg,
               timestamp: new Date(msg.timestamp),
               // Keep actions but regenerate them for bot messages
               actions: msg.type === 'bot' && msg.metadata?.products ? 
-                msg.metadata.products.slice(0, 3).map((product: any) => ({
+                msg.metadata.products.slice(0, 3).map((product) => ({
                   label: `View ${product.title}`,
                   action: () => {
                     console.log('Persisted action - navigating to:', product.handle, product.title);
@@ -167,6 +198,47 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     // Save session ID
     localStorage.setItem('chatbot_session_id', state.sessionId);
   }, [state.sessionId]);
+
+  // Save chats to database when messages change
+  useEffect(() => {
+    const saveChatToDB = async () => {
+      try {
+        const userId = auth.getUserId();
+        if (userId && state.messages.length > 0) {
+          await saveChat({
+            userId: userId as Id<"users">,
+            sessionId: state.sessionId,
+            messages: state.messages.map(msg => ({
+              id: msg.id,
+              type: msg.type,
+              content: msg.content,
+              timestamp: msg.timestamp.getTime(),
+              metadata: msg.metadata ? {
+                products: msg.metadata.products?.map(p => ({
+                  id: p.id,
+                  title: p.title,
+                  handle: p.handle,
+                })),
+                intent: msg.metadata.intent,
+              } : undefined,
+            })),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to save chat to database:', error);
+        // Don't fail the UI if saving fails
+      }
+    };
+
+    // Debounce saving - only save if messages have changed and there are messages
+    const timeoutId = setTimeout(() => {
+      if (state.messages.length > 0) {
+        saveChatToDB();
+      }
+    }, 2000); // Save 2 seconds after last message change
+
+    return () => clearTimeout(timeoutId);
+  }, [state.messages, state.sessionId, saveChat]);
 
   // Save messages to localStorage with throttling
   useEffect(() => {
@@ -198,7 +270,10 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     variant: 'outline' as const
   }), [navigate]);
 
-  const createProductAction = useCallback((product: any) => ({
+  const createProductAction = useCallback((product: {
+    title: string;
+    handle: string;
+  }) => ({
     label: `View ${product.title}`,
     action: () => {
       console.log('Navigating to product:', product.handle, product.title);
@@ -293,7 +368,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
 
       // Product actions
       if (response.products && response.products.length > 0) {
-        response.products.slice(0, 3).forEach((product: any) => {
+        response.products.slice(0, 3).forEach((product) => {
           actions.push(createProductAction(product));
           
           // Add to cart action if product has variants
@@ -307,8 +382,12 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Support options from context
-      if (response.context?.supportOptions) {
-        response.context.supportOptions.forEach((option: any) => {
+      if (response.context?.supportOptions && Array.isArray(response.context.supportOptions)) {
+        response.context.supportOptions.forEach((option: {
+          title: string;
+          action: string;
+          type?: string;
+        }) => {
           actions.push({
             label: option.title,
             action: () => {

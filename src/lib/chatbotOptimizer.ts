@@ -5,19 +5,19 @@ export class ChatbotOptimizer {
   private static readonly MAX_MESSAGE_HISTORY = 50;
   
   // Debounce function for search queries
-  static debounce<T extends (...args: any[]) => any>(
+  static debounce<T extends (...args: unknown[]) => unknown>(
     func: T,
     delay: number = ChatbotOptimizer.DEBOUNCE_DELAY
   ): (...args: Parameters<T>) => void {
     let timeoutId: NodeJS.Timeout;
     return (...args: Parameters<T>) => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(null, args), delay);
+      timeoutId = setTimeout(() => func(...args), delay);
     };
   }
 
   // Throttle function for scroll events and rapid interactions
-  static throttle<T extends (...args: any[]) => any>(
+  static throttle<T extends (...args: unknown[]) => unknown>(
     func: T,
     delay: number = 100
   ): (...args: Parameters<T>) => void {
@@ -26,13 +26,13 @@ export class ChatbotOptimizer {
       const now = Date.now();
       if (now - lastCall >= delay) {
         lastCall = now;
-        func.apply(null, args);
+        func(...args);
       }
     };
   }
 
   // Memory management for message history
-  static limitMessageHistory(messages: any[]): any[] {
+  static limitMessageHistory<T>(messages: T[]): T[] {
     if (messages.length <= ChatbotOptimizer.MAX_MESSAGE_HISTORY) {
       return messages;
     }
@@ -45,7 +45,7 @@ export class ChatbotOptimizer {
   }
 
   // Lazy loading for components
-  static createLazyComponent<T extends React.ComponentType<any>>(
+  static createLazyComponent<T extends React.ComponentType<Record<string, unknown>>>(
     importFunc: () => Promise<{ default: T }>
   ) {
     return React.lazy(importFunc);
@@ -136,7 +136,11 @@ export class ChatbotOptimizer {
   // Memory usage monitoring
   static monitorMemoryUsage(): void {
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const memory = performance.memory as {
+        usedJSHeapSize: number;
+        totalJSHeapSize: number;
+        jsHeapSizeLimit: number;
+      };
       console.debug('Chatbot memory usage:', {
         used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + 'MB',
         total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + 'MB',
@@ -151,9 +155,9 @@ export class ChatbotOptimizer {
     batchSize: number = 5,
     delay: number = 100
   ) {
-    let queue: T[] = [];
+    const queue: T[] = [];
     let timeoutId: NodeJS.Timeout | null = null;
-    const pending = new Map<T, { resolve: (value: R) => void; reject: (error: any) => void }>();
+    const pending = new Map<T, { resolve: (value: R) => void; reject: (error: unknown) => void }>();
 
     const processBatch = async () => {
       if (queue.length === 0) return;

@@ -18,6 +18,7 @@ export default defineSchema({
       title: v.string(),
       price: v.number(),
       availableForSale: v.boolean(),
+      quantity: v.number(), // Inventory quantity
       selectedOptions: v.optional(v.array(v.object({
         name: v.string(),
         value: v.string(),
@@ -46,13 +47,15 @@ export default defineSchema({
     phone: v.optional(v.string()),
     acceptsMarketing: v.boolean(),
     passwordHash: v.string(), // For authentication
-    creditsBalance: v.number(), // 2XY credits balance
+    role: v.optional(v.union(v.literal("customer"), v.literal("admin"), v.literal("manager"))), // User role (defaults to "customer")
+    creditsBalance: v.number(), // MONTEVELORIS credits balance
     creditsEarned: v.number(), // Total credits earned
     creditsPending: v.number(), // Pending credits
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_role", ["role"]),
 
   // Cart table (one per user/session)
   carts: defineTable({
@@ -126,6 +129,95 @@ export default defineSchema({
   })
     .index("by_code", ["code"])
     .index("by_creator", ["createdBy"]),
+
+  // Filter settings (brands, categories, etc.)
+  filterSettings: defineTable({
+    type: v.union(
+      v.literal("brand"),
+      v.literal("category"),
+      v.literal("color"),
+      v.literal("size"),
+      v.literal("material"),
+      v.literal("activity")
+    ),
+    name: v.string(),
+    displayName: v.string(),
+    isActive: v.boolean(),
+    order: v.number(), // For sorting
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_type", ["type"])
+    .index("by_active", ["isActive"]),
+
+  // Homepage content settings
+  homepageContent: defineTable({
+    type: v.union(
+      v.literal("hero"),
+      v.literal("categoryCard")
+    ),
+    // For hero: videos and images
+    videos: v.optional(v.array(v.string())), // Video URLs
+    heroImage: v.optional(v.string()), // Fallback hero image URL
+    // For category cards
+    title: v.optional(v.string()),
+    handle: v.optional(v.string()), // URL handle for navigation
+    image: v.optional(v.string()), // Category card image URL
+    description: v.optional(v.string()),
+    order: v.number(), // For sorting
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_type", ["type"])
+    .index("by_active", ["isActive"]),
+
+  // Chat conversations table
+  chats: defineTable({
+    userId: v.id("users"),
+    sessionId: v.string(), // Unique session ID
+    title: v.optional(v.string()), // Auto-generated or user-defined title
+    messages: v.array(v.object({
+      id: v.string(),
+      type: v.union(v.literal("user"), v.literal("bot")),
+      content: v.string(),
+      timestamp: v.number(),
+      metadata: v.optional(v.object({
+        products: v.optional(v.array(v.object({
+          id: v.string(),
+          title: v.string(),
+          handle: v.string(),
+        }))),
+        intent: v.optional(v.string()),
+      })),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_session", ["sessionId"]),
+
+  // Payments table
+  payments: defineTable({
+    orderId: v.id("orders"),
+    userId: v.id("users"),
+    amount: v.number(), // Total amount required
+    amountPaid: v.number(), // Amount paid by user
+    status: v.union(
+      v.literal("pending"), // Payment pending
+      v.literal("partial"), // Partial payment received
+      v.literal("paid"), // Full payment received
+      v.literal("cancelled") // Payment cancelled
+    ),
+    paymentMethod: v.string(), // "UPI", "Bank Transfer", etc.
+    transactionId: v.optional(v.string()), // UPI transaction ID or reference
+    notes: v.optional(v.string()), // Admin notes
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_order", ["orderId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
 });
 
 

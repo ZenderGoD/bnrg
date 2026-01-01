@@ -3,7 +3,9 @@
 
 import { ConvexReactClient } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { hashPassword } from "./api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { hashPassword, type User } from "./api";
+import { sanitizeConvexError } from "./errorHandler";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL || "");
 
@@ -42,25 +44,30 @@ export async function customerLogin(email: string, password: string): Promise<Au
     const passwordHash = await hashPassword(password);
     const userId = await convex.mutation(api.auth.login, { email, passwordHash });
     if (!userId) {
-      return { success: false, message: "Invalid email or password" };
+      return { success: false, message: "Incorrect email or password" };
     }
 
     localStorage.setItem("user_id", userId);
-    const user = await convex.query(api.users.getById, { id: userId as any });
+    const user = await convex.query(api.users.getById, { id: userId as Id<"users"> });
+
+    if (!user) {
+      return { success: false, message: "Failed to load user data" };
+    }
 
     const customer: Customer = {
       id: userId,
       email,
-      firstName: (user as any)?.firstName,
-      lastName: (user as any)?.lastName,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
 
     localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(customer));
 
     return { success: true, customer };
-  } catch (error: any) {
-    console.error("customerLogin error (Convex):", error);
-    return { success: false, message: error?.message || "Failed to login" };
+  } catch (error: unknown) {
+    console.error("customerLogin error:", error);
+    const message = sanitizeConvexError(error);
+    return { success: false, message };
   }
 }
 
@@ -84,9 +91,10 @@ export async function customerRegister(
       success: true,
       message: "Account created successfully. You can now sign in with your email and password.",
     };
-  } catch (error: any) {
-    console.error("customerRegister error (Convex):", error);
-    return { success: false, message: error?.message || "Failed to create account" };
+  } catch (error: unknown) {
+    console.error("customerRegister error:", error);
+    const message = sanitizeConvexError(error);
+    return { success: false, message };
   }
 }
 

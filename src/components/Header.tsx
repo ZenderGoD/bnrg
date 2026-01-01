@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { SearchInput } from '@/components/SearchInput';
 import { MensCategoriesDropdown } from '@/components/MensCategoriesDropdown';
 import { WomensCategoriesDropdown } from '@/components/WomensCategoriesDropdown';
+import { KidsCategoriesDropdown } from '@/components/KidsCategoriesDropdown';
 import { MobileCategoriesSidebar } from '@/components/MobileCategoriesSidebar';
 import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler';
 import { isCustomerLoggedIn } from '@/lib/shopify';
@@ -14,9 +15,9 @@ import { isCustomerLoggedIn } from '@/lib/shopify';
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [hoveredCategory, setHoveredCategory] = useState<'men' | 'women' | null>(null);
+  const [hoveredCategory, setHoveredCategory] = useState<'men' | 'women' | 'kids' | null>(null);
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
-  const [selectedGenderForMobile, setSelectedGenderForMobile] = useState<'men' | 'women' | null>(null);
+  const [selectedGenderForMobile, setSelectedGenderForMobile] = useState<'men' | 'women' | 'kids' | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
@@ -33,8 +34,8 @@ export function Header() {
     { name: 'Home', href: '/' },
     { name: 'Men', href: '/men' },
     { name: 'Women', href: '/women' },
+    { name: 'Kids', href: '/kids' },
     { name: 'Catalog', href: '/catalog' },
-    ...(isLoggedIn ? [{ name: 'Credits', href: '/credits' }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -122,7 +123,7 @@ export function Header() {
               whileTap={{ scale: 0.95 }}
             >
               <Link to="/" className="flex items-center space-x-2">
-                <span className="text-xl sm:text-2xl font-bold gradient-text">2XY</span>
+                <span className="text-xl sm:text-2xl font-bold gradient-text">MONTEVELORIS</span>
               </Link>
             </motion.div>
 
@@ -135,8 +136,8 @@ export function Header() {
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.2 }}
                   onMouseEnter={() => {
-                    if (item.name === 'Men' || item.name === 'Women') {
-                      setHoveredCategory(item.name.toLowerCase() as 'men' | 'women');
+                    if (item.name === 'Men' || item.name === 'Women' || item.name === 'Kids') {
+                      setHoveredCategory(item.name.toLowerCase() as 'men' | 'women' | 'kids');
                     }
                   }}
                   onMouseLeave={() => setHoveredCategory(null)}
@@ -169,6 +170,11 @@ export function Header() {
                   {item.name === 'Women' && (
                     <WomensCategoriesDropdown
                       isVisible={hoveredCategory === 'women'}
+                    />
+                  )}
+                  {item.name === 'Kids' && (
+                    <KidsCategoriesDropdown
+                      isVisible={hoveredCategory === 'kids'}
                     />
                   )}
                 </motion.div>
@@ -315,8 +321,8 @@ export function Header() {
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2">
                   {navigation.map((item) => {
-                    // Handle Men and Women differently on mobile
-                    if (item.name === 'Men' || item.name === 'Women') {
+                    // Handle Men, Women, and Kids differently on mobile
+                    if (item.name === 'Men' || item.name === 'Women' || item.name === 'Kids') {
                       return (
                         <button
                           key={item.name}
@@ -324,7 +330,7 @@ export function Header() {
                             setIsMobileCategoriesOpen(true);
                             setIsMobileMenuOpen(false);
                             // Set the selected gender for the sidebar
-                            setSelectedGenderForMobile(item.name.toLowerCase() as 'men' | 'women');
+                            setSelectedGenderForMobile(item.name.toLowerCase() as 'men' | 'women' | 'kids');
                           }}
                           className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors text-left ${
                             isActive(item.href)

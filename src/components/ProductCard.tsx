@@ -193,7 +193,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               <Button
                 onClick={handleAddToCart}
                 disabled={isLoading || !firstVariant?.availableForSale}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 hover:shadow-lg text-sm flex items-center justify-center"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 hover:shadow-lg text-sm flex items-center justify-center"
               >
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 {isLoading ? 'Adding...' : 'Quick Add'}

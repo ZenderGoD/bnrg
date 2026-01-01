@@ -28,7 +28,7 @@ interface CreditSystemProps {
   // All props are now optional as we fetch from Shopify
 }
 
-export function CreditSystem({ }: CreditSystemProps) {
+export function CreditSystem(_props: CreditSystemProps) {
   const [shareAmount, setShareAmount] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [customerCredits, setCustomerCredits] = useState<CustomerCredits>({ balance: 0, earned: 0, pendingCredits: 0 });
@@ -168,7 +168,7 @@ export function CreditSystem({ }: CreditSystemProps) {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'earn' | 'share' | 'transactions')}>
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -188,7 +188,7 @@ export function CreditSystem({ }: CreditSystemProps) {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-white">
                   <CreditCard className="h-6 w-6" />
-                  <span>Your 2XY Credits</span>
+                  <span>Your MONTEVELORIS Credits</span>
                 </CardTitle>
                 <CardDescription className="text-white/80">
                   Earn 40% back in credits with every purchase and share them with friends
@@ -202,7 +202,7 @@ export function CreditSystem({ }: CreditSystemProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>How 2XY Credits Work</CardTitle>
+                <CardTitle>How MONTEVELORIS Credits Work</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start space-x-3">
@@ -341,7 +341,7 @@ export function CreditSystem({ }: CreditSystemProps) {
                             {txn.type === 'spent' && <CreditCard className="h-4 w-4 text-red-600" />}
                             {txn.type === 'shared' && <Share2 className="h-4 w-4 text-accent" />}
                             {txn.type === 'received' && <Gift className="h-4 w-4 text-accent" />}
-                            {txn.type === 'refund' && <CreditCard className="h-4 w-4 text-blue-600" />}
+                            {txn.type === 'refund' && <CreditCard className="h-4 w-4 text-gray-900 dark:text-amber-600" />}
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{txn.description}</p>
