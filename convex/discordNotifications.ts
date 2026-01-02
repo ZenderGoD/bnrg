@@ -27,7 +27,16 @@ export const sendPaymentNotification = internalAction({
       timeStyle: 'long'
     });
 
-    let embed: any;
+    interface DiscordEmbed {
+      title: string;
+      description?: string;
+      fields: Array<{ name: string; value: string; inline: boolean }>;
+      color: number;
+      footer?: { text: string };
+      timestamp: string;
+    }
+    
+    let embed: DiscordEmbed;
 
     if (args.type === "initiated") {
       embed = {
