@@ -128,7 +128,7 @@ export function Header() {
                   alt="MONTEVELORIS" 
                   className="h-8 sm:h-9 object-contain"
                 />
-                <span className="text-xl sm:text-2xl font-bold text-[#d97706]">MONTEVELORIS</span>
+                <span className="text-xl sm:text-2xl font-bold text-[#d97706]">MONTE VELORIS</span>
               </Link>
             </motion.div>
 
