@@ -218,7 +218,7 @@ export function Chatbot() {
                             <Sparkles className="h-6 w-6 text-primary animate-pulse" />
                           </div>
                         </div>
-                        <h4 className="font-bold text-lg text-foreground mb-3 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                        <h4 className="font-bold text-lg mb-3 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                           Welcome to MONTEVELORIS!
                         </h4>
                         <p className="text-sm text-muted-foreground/90 max-w-xs mx-auto leading-relaxed mb-5">
@@ -294,6 +294,12 @@ export function Chatbot() {
                                       altText?: string | null;
                                     };
                                   }>;
+                                };
+                                priceRange?: {
+                                  minVariantPrice?: {
+                                    amount: string;
+                                    currencyCode?: string;
+                                  };
                                 };
                               }, productIndex: number) => (
                                 <div key={productIndex} className="relative group cursor-pointer" onClick={() => {
