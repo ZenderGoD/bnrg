@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Marquee } from '@/components/ui/marquee';
@@ -83,18 +83,9 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/men">
-                <Button className="btn-hero group w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4">
-                  Shop Men's Collection
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 text-[#052e16]" />
-                </Button>
-              </Link>
-            </motion.div>
-
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link to="/women">
                 <Button className="btn-ghost-premium w-full sm:w-auto text-sm sm:text-base px-6 py-3 sm:py-4">
-                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-[#052e16]" />
+                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-[#3c6a42]" />
                   Women's Collection
                 </Button>
               </Link>
