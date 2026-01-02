@@ -26,6 +26,7 @@ interface Credit {
 
 interface CreditSystemProps {
   // All props are now optional as we fetch from Shopify
+  [key: string]: never;
 }
 
 export function CreditSystem(_props: CreditSystemProps) {

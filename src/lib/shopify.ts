@@ -205,7 +205,7 @@ export async function getCart(cartId: string): Promise<Cart> {
 }
 
 // Helper to find product by variantId
-async function findProductByVariantId(variantId: string): Promise<{ product: ShopifyProduct; variant: any } | null> {
+async function findProductByVariantId(variantId: string): Promise<{ product: ShopifyProduct; variant: ShopifyProduct['variants']['edges'][number]['node'] } | null> {
   try {
     // Get all products and find the one containing this variant
     const products = await getAllProducts(100);

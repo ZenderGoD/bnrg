@@ -76,12 +76,12 @@ const Profile = () => {
               acceptsMarketing: userData.acceptsMarketing || false,
               firstName: userData.firstName || '',
               lastName: userData.lastName || '',
-              address: (userData as any).address || '',
-              apartment: (userData as any).apartment || '',
-              city: (userData as any).city || '',
-              state: (userData as any).state || '',
-              country: (userData as any).country || 'India',
-              pinCode: (userData as any).pinCode || '',
+              address: userData.address || '',
+              apartment: userData.apartment || '',
+              city: userData.city || '',
+              state: userData.state || '',
+              country: userData.country || 'India',
+              pinCode: userData.pinCode || '',
               phone: userData.phone || '',
             });
             

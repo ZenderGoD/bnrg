@@ -57,12 +57,21 @@ function formatMessageContent(content: string) {
   });
 }
 
+interface Chat {
+  _id: string;
+  title?: string;
+  messageCount?: number;
+  messages?: Array<{ id: string; type: string; content: string; timestamp: number }>;
+  updatedAt?: number;
+  createdAt: number;
+}
+
 function ChatSidebar({ 
   chats, 
   selectedChatId, 
   onSelectChat 
 }: { 
-  chats: any[];
+  chats: Chat[];
   selectedChatId: string | null;
   onSelectChat: (chatId: string) => void;
 }) {
@@ -116,7 +125,7 @@ function ChatSidebar({
   );
 }
 
-function ChatView({ chat }: { chat: any }) {
+function ChatView({ chat }: { chat: Chat | null }) {
   if (!chat) {
     return (
       <div className="flex items-center justify-center h-full">

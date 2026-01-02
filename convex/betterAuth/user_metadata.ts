@@ -9,7 +9,9 @@ export const setUserId = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Better Auth user table is in the component, access via component context
-    await (ctx.db as any).patch("user", args.authId as any, {
+    // Note: This is accessing a table outside the schema, so we use type assertion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (ctx.db as unknown as { patch: (table: string, id: string, data: { userId: string }) => Promise<void> }).patch("user", args.authId, {
       userId: args.userId,
     });
     return null;
@@ -24,7 +26,9 @@ export const setUserRole = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Better Auth user table is in the component, access via component context
-    await (ctx.db as any).patch("user", args.authId as any, {
+    // Note: This is accessing a table outside the schema, so we use type assertion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (ctx.db as unknown as { patch: (table: string, id: string, data: { role: string }) => Promise<void> }).patch("user", args.authId, {
       role: args.role,
     });
     return null;

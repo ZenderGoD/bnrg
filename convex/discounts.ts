@@ -104,7 +104,17 @@ export const updateCoupon = mutation({
     }
 
     const now = Date.now();
-    const updateData: any = {
+    const updateData: {
+      updatedAt: number;
+      code?: string;
+      discountType?: "percentage" | "fixed";
+      discountValue?: number;
+      isActive?: boolean;
+      expiresAt?: number;
+      usageLimit?: number;
+      minPurchaseAmount?: number;
+      description?: string;
+    } = {
       updatedAt: now,
     };
 
@@ -229,7 +239,16 @@ export const updateAdminGiftCard = mutation({
     }
 
     const now = Date.now();
-    const updateData: any = {
+    const updateData: {
+      updatedAt: number;
+      code?: string;
+      amount?: number;
+      isActive?: boolean;
+      expiresAt?: number;
+      usageLimit?: number;
+      minPurchaseAmount?: number;
+      description?: string;
+    } = {
       updatedAt: now,
     };
 

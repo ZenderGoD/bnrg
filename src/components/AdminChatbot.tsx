@@ -182,7 +182,15 @@ export function AdminChatbot() {
             setExtractedProductData(newData);
             
             // Auto-fill form with extracted data
-            const formData: any = {};
+            const formData: Partial<{
+              title?: string;
+              handle?: string;
+              description?: string;
+              price?: number;
+              category?: string;
+              collection?: 'mens-collection' | 'womens-collection' | 'kids-collection';
+              tags?: string[];
+            }> = {};
             if (newData.title) {
               formData.title = newData.title;
               formData.handle = generateHandle(newData.title);
@@ -233,7 +241,7 @@ export function AdminChatbot() {
               return results?.[0] || null;
             }
           },
-          updateProduct: async (id: string, data: any) => {
+          updateProduct: async (id: string, data: Record<string, unknown>) => {
             await updateProductMutation({ id: id as Id<"products">, ...data });
           },
           getProducts: async (query?: string) => {
@@ -255,13 +263,13 @@ export function AdminChatbot() {
         if (response.toolCalls && response.toolCalls.length > 0) {
           const toolResultsText = response.toolCalls.map(tc => {
             if (tc.name === 'searchProducts' && tc.result) {
-              const products = tc.result as any[];
+              const products = tc.result as Array<{ title: string; _id: string; price: number }>;
               if (products.length > 0) {
-                return `Found ${products.length} product(s):\n${products.slice(0, 5).map((p: any, i: number) => `${i + 1}. ${p.title} (ID: ${p._id}) - ₹${p.price}`).join('\n')}`;
+                return `Found ${products.length} product(s):\n${products.slice(0, 5).map((p, i) => `${i + 1}. ${p.title} (ID: ${p._id}) - ₹${p.price}`).join('\n')}`;
               }
               return 'No products found.';
             } else if (tc.name === 'getProductById' && tc.result) {
-              const product = tc.result as any;
+              const product = tc.result as { title: string; price: number; images?: Array<unknown>; variants?: Array<unknown> } | null;
               if (product) {
                 return `Product: ${product.title}\nPrice: ₹${product.price}\nImages: ${product.images?.length || 0}\nVariants: ${product.variants?.length || 0}`;
               }

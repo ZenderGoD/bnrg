@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
-import { auth, users } from '@/lib/api';
+import { auth, users, type User as UserType } from '@/lib/api';
 import { FullscreenImageViewer } from '@/components/FullscreenImageViewer';
 const UPI_ID = "bishalbanerjee565@okicici";
 const QR_CODE_IMAGE = "/WhatsApp Image 2026-01-01 at 03.42.11.jpeg";
@@ -29,7 +29,7 @@ export default function Checkout() {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [useSavedAddress, setUseSavedAddress] = useState(false);
   const [sameAsShipping, setSameAsShipping] = useState(true);
-  const [savedUser, setSavedUser] = useState<any>(null);
+  const [savedUser, setSavedUser] = useState<UserType | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [orderId, setOrderId] = useState<Id<"orders"> | null>(null);
@@ -90,12 +90,12 @@ export default function Checkout() {
             setShippingAddress({
               firstName: userData.firstName || '',
               lastName: userData.lastName || '',
-              address: (userData as any).address || '',
-              apartment: (userData as any).apartment || '',
-              city: (userData as any).city || '',
-              state: (userData as any).state || '',
-              country: (userData as any).country || 'India',
-              pinCode: (userData as any).pinCode || '',
+              address: userData.address || '',
+              apartment: userData.apartment || '',
+              city: userData.city || '',
+              state: userData.state || '',
+              country: userData.country || 'India',
+              pinCode: userData.pinCode || '',
               phone: userData.phone || '',
               email: userData.email || '',
             });
@@ -368,12 +368,12 @@ export default function Checkout() {
                             setShippingAddress({
                               firstName: savedUser.firstName || '',
                               lastName: savedUser.lastName || '',
-                              address: (savedUser as any).address || '',
-                              apartment: (savedUser as any).apartment || '',
-                              city: (savedUser as any).city || '',
-                              state: (savedUser as any).state || '',
-                              country: (savedUser as any).country || 'India',
-                              pinCode: (savedUser as any).pinCode || '',
+                              address: savedUser.address || '',
+                              apartment: savedUser.apartment || '',
+                              city: savedUser.city || '',
+                              state: savedUser.state || '',
+                              country: savedUser.country || 'India',
+                              pinCode: savedUser.pinCode || '',
                               phone: savedUser.phone || '',
                               email: savedUser.email || '',
                             });
@@ -387,9 +387,9 @@ export default function Checkout() {
                     {useSavedAddress && (
                       <div className="pl-6 text-sm text-muted-foreground">
                         <p>{savedUser.firstName} {savedUser.lastName}</p>
-                        <p>{(savedUser as any).address || ''}</p>
-                        {(savedUser as any).apartment && <p>{(savedUser as any).apartment}</p>}
-                        <p>{(savedUser as any).city || ''}, {(savedUser as any).state || ''} {(savedUser as any).pinCode || ''}</p>
+                        <p>{savedUser.address || ''}</p>
+                        {savedUser.apartment && <p>{savedUser.apartment}</p>}
+                        <p>{savedUser.city || ''}, {savedUser.state || ''} {savedUser.pinCode || ''}</p>
                         <p>{savedUser.phone || ''}</p>
                       </div>
                     )}

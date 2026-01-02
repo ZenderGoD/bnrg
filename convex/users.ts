@@ -90,7 +90,21 @@ export const update = mutation({
     const user = await ctx.db.get(id);
     if (!user) throw new Error("User not found");
     
-    const updateData: any = {
+    const updateData: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      acceptsMarketing?: boolean;
+      role?: "customer" | "admin" | "manager";
+      address?: string;
+      apartment?: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      pinCode?: string;
+      displayName?: string;
+      updatedAt: number;
+    } = {
       ...updates,
       updatedAt: Date.now(),
     };

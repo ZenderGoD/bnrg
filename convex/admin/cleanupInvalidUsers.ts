@@ -24,14 +24,15 @@ export const cleanupInvalidUsers = mutation({
         user.updatedAt !== undefined;
       
       // Also check if it has the old 'name' field (which indicates old schema)
-      const hasOldSchema = (user as any).name !== undefined;
+      const hasOldSchema = 'name' in user && (user as { name?: unknown }).name !== undefined;
       
       if (!hasRequiredFields || hasOldSchema) {
         // Delete invalid documents (old schema)
         await ctx.db.delete(user._id);
         deletedCount++;
         deletedIds.push(user._id);
-        console.log(`Deleted invalid user: ${user._id} (email: ${(user as any).email || 'unknown'})`);
+        const userEmail = 'email' in user ? String((user as { email?: string }).email || 'unknown') : 'unknown';
+        console.log(`Deleted invalid user: ${user._id} (email: ${userEmail})`);
       }
     }
     

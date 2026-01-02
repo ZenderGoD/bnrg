@@ -1691,7 +1691,7 @@ export default function Admin() {
                           </tr>
                         </thead>
                         <tbody>
-                          {(usersWithStats || []).map((user: any) => (
+                          {(usersWithStats || []).map((user) => (
                             <tr key={user._id} className="border-b hover:bg-muted/50">
                               <td className="p-3">
                                 <div>

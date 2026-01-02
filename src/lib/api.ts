@@ -52,6 +52,12 @@ export interface User {
   creditsBalance: number;
   creditsEarned: number;
   creditsPending: number;
+  address?: string;
+  apartment?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pinCode?: string;
   createdAt?: number;
   updatedAt?: number;
 }
