@@ -35,7 +35,7 @@ const Catalog = () => {
       return;
     }
     
-    let filtered = [...products];
+    const filtered = [...products];
 
     // Sort products
     switch (sortBy) {

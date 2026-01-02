@@ -4,37 +4,92 @@ import { v } from "convex/values";
 // Get hero content
 export const getHero = query({
   handler: async (ctx) => {
-    const hero = await ctx.db
-      .query("homepageContent")
-      .withIndex("by_type", (q) => q.eq("type", "hero"))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .first();
-    
-    return hero || {
-      videos: [
-        '/Intro.mp4',
-        'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/8518887-uhd_4096_1680_25fps.mp4',
-        'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/Halluo_Video_I_want_a_sho_c_3990065366058680375.mp4'
-      ],
-      heroImage: '/hero-video-bg.jpg',
-    };
+    try {
+      const hero = await ctx.db
+        .query("homepageContent")
+        .withIndex("by_type", (q) => q.eq("type", "hero"))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .first();
+      
+      return hero || {
+        videos: [
+          '/Intro.mp4',
+          'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/8518887-uhd_4096_1680_25fps.mp4',
+          'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/Halluo_Video_I_want_a_sho_c_3990065366058680375.mp4'
+        ],
+        heroImage: '/hero-video-bg.jpg',
+      };
+    } catch (error) {
+      console.error("Error fetching hero content:", error);
+      // Return default hero on error
+      return {
+        videos: [
+          '/Intro.mp4',
+          'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/8518887-uhd_4096_1680_25fps.mp4',
+          'https://cdn.shopify.com/s/files/1/0665/1651/7051/files/Halluo_Video_I_want_a_sho_c_3990065366058680375.mp4'
+        ],
+        heroImage: '/hero-video-bg.jpg',
+      };
+    }
   },
 });
 
 // Get category cards
 export const getCategoryCards = query({
   handler: async (ctx) => {
-    const cards = await ctx.db
-      .query("homepageContent")
-      .withIndex("by_type", (q) => q.eq("type", "categoryCard"))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
-    
-    // Sort by order
-    cards.sort((a, b) => a.order - b.order);
-    
-    // Return default if empty
-    if (cards.length === 0) {
+    try {
+      const cards = await ctx.db
+        .query("homepageContent")
+        .withIndex("by_type", (q) => q.eq("type", "categoryCard"))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .collect();
+      
+      // Sort by order (handle undefined order values)
+      cards.sort((a, b) => {
+        const orderA = a.order ?? 0;
+        const orderB = b.order ?? 0;
+        return orderA - orderB;
+      });
+      
+      // Return default if empty
+      if (cards.length === 0) {
+        return [
+          { 
+            title: 'Performance & Sports', 
+            handle: 'performance-sports', 
+            image: '/athletic-performance.jpg',
+            description: 'Athletic excellence redefined'
+          },
+          { 
+            title: 'Lifestyle & Casual', 
+            handle: 'lifestyle-casual', 
+            image: '/premium-lifestyle.jpg',
+            description: 'Everyday sophistication'
+          },
+          { 
+            title: 'Limited Edition & Hype', 
+            handle: 'limited-edition-hype', 
+            image: '/limited-editions.jpg',
+            description: 'Exclusive drops & collaborations'
+          },
+          { 
+            title: 'Retro & Classics', 
+            handle: 'retro-classics', 
+            image: '/street-fashion.jpg',
+            description: 'Timeless heritage designs'
+          },
+        ];
+      }
+      
+      return cards.map(card => ({
+        title: card.title || '',
+        handle: card.handle || '',
+        image: card.image || '',
+        description: card.description || '',
+      }));
+    } catch (error) {
+      console.error("Error fetching category cards:", error);
+      // Return default cards on error
       return [
         { 
           title: 'Performance & Sports', 
@@ -62,13 +117,6 @@ export const getCategoryCards = query({
         },
       ];
     }
-    
-    return cards.map(card => ({
-      title: card.title || '',
-      handle: card.handle || '',
-      image: card.image || '',
-      description: card.description || '',
-    }));
   },
 });
 
@@ -80,7 +128,7 @@ export const updateHero = mutation({
   },
   handler: async (ctx, args) => {
     // Get existing hero or create new
-    let hero = await ctx.db
+    const hero = await ctx.db
       .query("homepageContent")
       .withIndex("by_type", (q) => q.eq("type", "hero"))
       .first();
@@ -168,26 +216,36 @@ export const deleteCategoryCard = mutation({
 // Get featured collections
 export const getFeaturedCollections = query({
   handler: async (ctx) => {
-    const collections = await ctx.db
-      .query("homepageContent")
-      .withIndex("by_type", (q) => q.eq("type", "featuredCollection"))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
-    
-    // Sort by order
-    collections.sort((a, b) => a.order - b.order);
-    
-    return collections.map(collection => ({
-      id: collection._id,
-      title: collection.title || '',
-      subtitle: collection.subtitle || '',
-      collectionHandle: collection.collectionHandle || '',
-      productHandles: collection.productHandles || [],
-      collectionImage: collection.collectionImage || '',
-      linkUrl: collection.linkUrl || '',
-      order: collection.order,
-      isActive: collection.isActive,
-    }));
+    try {
+      const collections = await ctx.db
+        .query("homepageContent")
+        .withIndex("by_type", (q) => q.eq("type", "featuredCollection"))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .collect();
+      
+      // Sort by order (handle undefined order values)
+      collections.sort((a, b) => {
+        const orderA = a.order ?? 0;
+        const orderB = b.order ?? 0;
+        return orderA - orderB;
+      });
+      
+      return collections.map(collection => ({
+        id: collection._id,
+        title: collection.title || '',
+        subtitle: collection.subtitle || '',
+        collectionHandle: collection.collectionHandle || '',
+        productHandles: collection.productHandles || [],
+        collectionImage: collection.collectionImage || '',
+        linkUrl: collection.linkUrl || '',
+        order: collection.order ?? 0,
+        isActive: collection.isActive ?? true,
+      }));
+    } catch (error) {
+      console.error("Error fetching featured collections:", error);
+      // Return empty array on error to prevent app crash
+      return [];
+    }
   },
 });
 
@@ -256,16 +314,25 @@ export const deleteFeaturedCollection = mutation({
 // Get hero marquee images
 export const getHeroMarquee = query({
   handler: async (ctx) => {
-    const marquee = await ctx.db
-      .query("homepageContent")
-      .withIndex("by_type", (q) => q.eq("type", "heroMarquee"))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .first();
-    
-    return marquee || {
-      topRowImages: [],
-      bottomRowImages: [],
-    };
+    try {
+      const marquee = await ctx.db
+        .query("homepageContent")
+        .withIndex("by_type", (q) => q.eq("type", "heroMarquee"))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .first();
+      
+      return marquee || {
+        topRowImages: [],
+        bottomRowImages: [],
+      };
+    } catch (error) {
+      console.error("Error fetching hero marquee:", error);
+      // Return default marquee on error
+      return {
+        topRowImages: [],
+        bottomRowImages: [],
+      };
+    }
   },
 });
 
@@ -277,7 +344,7 @@ export const updateHeroMarquee = mutation({
   },
   handler: async (ctx, args) => {
     // Get existing marquee or create new
-    let marquee = await ctx.db
+    const marquee = await ctx.db
       .query("homepageContent")
       .withIndex("by_type", (q) => q.eq("type", "heroMarquee"))
       .first();
