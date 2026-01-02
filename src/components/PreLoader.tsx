@@ -39,7 +39,7 @@ export function PreLoader({ onComplete }: PreLoaderProps) {
           className="mb-8"
         >
           <h1 className="text-6xl md:text-8xl font-bold gradient-text">MONTEVELORIS</h1>
-          <p className="text-muted-foreground text-lg mt-2">Premium Sneakers</p>
+          <p className="text-muted-foreground text-lg mt-2">Premium Footwear</p>
         </motion.div>
 
         {/* Progress Bar */}

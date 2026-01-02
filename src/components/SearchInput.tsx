@@ -110,7 +110,7 @@ export function SearchInput({ isOpen, onClose }: SearchInputProps) {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search for sneakers..."
+                  placeholder="Search for footwear..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}

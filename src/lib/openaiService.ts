@@ -209,16 +209,16 @@ class OpenAIService {
   }
 
   private createSystemPrompt(): string {
-    return `You are a helpful shopping assistant for MONTEVELORIS, a premium sneaker store. Your role is to:
+    return `You are a helpful shopping assistant for MONTEVELORIS, a premium footwear store. Your role is to:
 
 1. Help customers find products they're looking for
-2. Provide information about sneakers, sizing, and availability
+2. Provide information about footwear, sizing, and availability
 3. Navigate users to the right sections of the store
 4. Assist with orders, cart management, and account questions
 5. Be friendly, knowledgeable, and concise
 
 Store Information:
-- MONTEVELORIS specializes in premium sneakers for men and women
+- MONTEVELORIS specializes in premium footwear for men and women
 - Categories: Athletic/Sports, Lifestyle/Casual, Limited Edition, Retro/Classics
 - Brands: Nike, Adidas, Jordan, Puma, Reebok, Converse, Vans, and more
 - Price ranges: Budget-friendly to premium ($50-$300+)
@@ -233,7 +233,7 @@ Guidelines:
 - Always maintain a friendly, professional tone
 
 Examples:
-- "Show me red Nike sneakers" → intent: search_products, searchTerms: ["red", "nike"], productRequest: {color: "red", brand: "nike"}
+- "Show me red Nike footwear" → intent: search_products, searchTerms: ["red", "nike"], productRequest: {color: "red", brand: "nike"}
 - "Take me to men's section" → intent: navigate_men
 - "What's in my cart?" → intent: view_cart
 - "Hi there!" → intent: greeting`;
@@ -252,7 +252,7 @@ Examples:
     // Simple keyword matching as fallback
     if (lowerMessage.includes('hi') || lowerMessage.includes('hello')) {
       return {
-        message: "Hey there! 👋 Welcome to MONTEVELORIS! I'm your AI shopping assistant and I'm here to help you find the perfect sneakers. What can I help you with today?",
+        message: "Hey there! 👋 Welcome to MONTEVELORIS! I'm your AI shopping assistant and I'm here to help you find the perfect footwear. What can I help you with today?",
         intent: 'greeting',
         confidence: 0.8
       };
@@ -260,7 +260,7 @@ Examples:
     
     if (lowerMessage.includes('help')) {
       return {
-        message: "I'm here to help! I can assist you with:\n\n🔍 **Product Discovery** - Find sneakers by brand, color, style\n📏 **Size & Fit** - Sizing guides and recommendations\n🛒 **Shopping** - Cart management and checkout help\n💳 **Credits** - MONTEVELORIS rewards and credit system\n📱 **Account** - Login, profile, and account management\n\nIf I can't solve your issue, I'll connect you with our Shopify customer support team!",
+        message: "I'm here to help! I can assist you with:\n\n🔍 **Product Discovery** - Find footwear by brand, color, style\n📏 **Size & Fit** - Sizing guides and recommendations\n🛒 **Shopping** - Cart management and checkout help\n💳 **Credits** - MONTEVELORIS rewards and credit system\n📱 **Account** - Login, profile, and account management\n\nIf I can't solve your issue, I'll connect you with our Shopify customer support team!",
         intent: 'get_help',
         confidence: 0.8
       };
@@ -276,7 +276,7 @@ Examples:
     
     if (lowerMessage.includes('men')) {
       return {
-        message: "I'll take you to our men's sneaker collection!",
+        message: "I'll take you to our men's footwear collection!",
         intent: 'navigate_men',
         confidence: 0.7
       };
@@ -284,7 +284,7 @@ Examples:
     
     if (lowerMessage.includes('women')) {
       return {
-        message: "Let me show you our women's sneaker collection!",
+        message: "Let me show you our women's footwear collection!",
         intent: 'navigate_women',
         confidence: 0.7
       };
@@ -305,7 +305,7 @@ Examples:
     const commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'show', 'find', 'get', 'want', 'need', 'looking', 'search'];
     const colors = ['red', 'blue', 'green', 'black', 'white', 'yellow', 'orange', 'purple', 'pink', 'brown', 'gray', 'grey'];
     const brands = ['nike', 'adidas', 'jordan', 'puma', 'reebok', 'converse', 'vans'];
-    const categories = ['running', 'athletic', 'sports', 'basketball', 'tennis', 'casual', 'formal', 'sneakers', 'shoes'];
+    const categories = ['running', 'athletic', 'sports', 'basketball', 'tennis', 'casual', 'formal', 'footwear', 'shoes'];
     
     const words = message
       .toLowerCase()
@@ -318,7 +318,7 @@ Examples:
       brands.includes(word) || 
       categories.includes(word) ||
       word.includes('shoe') ||
-      word.includes('sneaker')
+      word.includes('footwear')
     );
     
     return relevantTerms.length > 0 ? relevantTerms : words.slice(0, 3);

@@ -92,7 +92,7 @@ class AdminChatbotService {
       const base64Image = await this.imageToBase64(imageFile);
       const mimeType = this.getMimeType(imageFile);
 
-      const systemPrompt = `You are banerjee.boy, an AI admin assistant for MONTEVELORIS sneaker store. Your job is to extract product information from images and help fill out product forms.
+      const systemPrompt = `You are banerjee.boy, an AI admin assistant for MONTEVELORIS footwear store. Your job is to extract product information from images and help fill out product forms.
 
 When analyzing product images, extract:
 - Product name/title (e.g., "Nike Air Max 90", "Adidas Ultraboost")
@@ -241,7 +241,7 @@ Return your response as JSON with this structure:
     toolCalls?: Array<{ name: string; args: unknown; result?: unknown }>;
   }> {
     try {
-      const systemPrompt = `You are banerjee.boy, an AI admin assistant for MONTEVELORIS sneaker store. You can help with:
+      const systemPrompt = `You are banerjee.boy, an AI admin assistant for MONTEVELORIS footwear store. You can help with:
 
 1. **Product Management:**
    - Search and find existing products
@@ -278,8 +278,8 @@ When a user provides product details in text (e.g., "product named 'green alpha'
     "brand": "MONTEVELORIS",
     "category": "street-fashion",  // or appropriate category
     "collection": "mens-collection",  // or appropriate collection
-    "description": "Green Alpha sneakers from MONTEVELORIS",
-    "tags": ["green", "alpha", "bnrg", "sneakers"]
+    "description": "Green Alpha footwear from MONTEVELORIS",
+    "tags": ["green", "alpha", "bnrg", "footwear"]
   }
 }
 
@@ -636,7 +636,7 @@ Be conversational, helpful, and proactive. When user provides product details, a
             extractedData.collection = 'mens-collection'; // default
           }
           if (!extractedData.description && extractedData.title) {
-            extractedData.description = `${extractedData.title}${extractedData.brand ? ` from ${extractedData.brand}` : ''} - Premium sneakers`;
+            extractedData.description = `${extractedData.title}${extractedData.brand ? ` from ${extractedData.brand}` : ''} - Premium footwear`;
           }
           if (!extractedData.tags) {
             extractedData.tags = [];
@@ -646,7 +646,7 @@ Be conversational, helpful, and proactive. When user provides product details, a
             if (extractedData.brand) {
               extractedData.tags.push(extractedData.brand.toLowerCase());
             }
-            extractedData.tags.push('sneakers');
+            extractedData.tags.push('footwear');
           }
         } else if (currentData) {
           // If no new data extracted but we have current data, use it

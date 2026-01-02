@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 interface MobileCategoriesSidebarProps {
   isOpen: boolean;
@@ -10,8 +12,8 @@ interface MobileCategoriesSidebarProps {
   selectedGender?: 'men' | 'women' | 'kids' | null;
 }
 
-// Sneaker icon component
-const SneakerIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel' }) => {
+// Footwear icon component
+const FootwearIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel' }) => {
   const iconPaths = {
     default: "M3 18h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V8H3v2z M2 20h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H2c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2z",
     high: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
@@ -28,72 +30,12 @@ const SneakerIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | '
   );
 };
 
-const mensCategories = [
-  { name: 'SUPER-STAR', icon: 'default', searchTerm: 'superstar' },
-  { name: 'BALL STAR', icon: 'high', searchTerm: 'basketball' },
-  { name: 'MARATHON', icon: 'running', searchTerm: 'marathon running' },
-  { name: 'TRUE-STAR', icon: 'high', searchTerm: 'premium luxury', badge: 'NEW' },
-  { name: 'STARDAN', icon: 'default', searchTerm: 'classic retro' },
-  { name: 'RUNNING SOLE', icon: 'running', searchTerm: 'running athletic' },
-  { name: 'DAD-STAR', icon: 'default', searchTerm: 'dad sneaker chunky' },
-  { name: 'MID STAR', icon: 'high', searchTerm: 'mid-top' },
-  { name: 'V-STAR', icon: 'default', searchTerm: 'v-shape design' },
-  { name: 'PURESTAR', icon: 'default', searchTerm: 'pure white minimalist' },
-  { name: 'SKY-STAR', icon: 'high', searchTerm: 'high-top sky' },
-  { name: 'SLIDE', icon: 'slide', searchTerm: 'slide sandal' },
-  { name: 'FORTY2', icon: 'default', searchTerm: 'forty2 special' },
-  { name: 'GGDB CLASSICS', icon: 'default', searchTerm: 'golden goose classic' },
-  { name: 'FRANCY', icon: 'high', searchTerm: 'francy style' },
-  { name: 'STARTER', icon: 'default', searchTerm: 'starter basic' },
-  { name: 'LIGHTSTAR', icon: 'running', searchTerm: 'lightweight' },
-  { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic' }
-] as const;
-
-const womensCategories = [
-  { name: 'SUPER-STAR', icon: 'default', searchTerm: 'superstar women' },
-  { name: 'BALL STAR', icon: 'high', searchTerm: 'basketball women' },
-  { name: 'MARATHON', icon: 'running', searchTerm: 'marathon running women' },
-  { name: 'TRUE-STAR', icon: 'high', searchTerm: 'premium luxury women', badge: 'NEW' },
-  { name: 'STARDAN', icon: 'default', searchTerm: 'classic retro women' },
-  { name: 'RUNNING SOLE', icon: 'running', searchTerm: 'running athletic women' },
-  { name: 'PLATFORM', icon: 'heel', searchTerm: 'platform sneakers women' },
-  { name: 'MID STAR', icon: 'high', searchTerm: 'mid-top women' },
-  { name: 'V-STAR', icon: 'default', searchTerm: 'v-shape design women' },
-  { name: 'PURESTAR', icon: 'default', searchTerm: 'pure white minimalist women' },
-  { name: 'SKY-STAR', icon: 'high', searchTerm: 'high-top sky women' },
-  { name: 'SLIDE', icon: 'slide', searchTerm: 'slide sandal women' },
-  { name: 'FRANCY', icon: 'high', searchTerm: 'francy style women' },
-  { name: 'GGDB CLASSICS', icon: 'default', searchTerm: 'golden goose classic women' },
-  { name: 'SUPERSTAR', icon: 'default', searchTerm: 'superstar women' },
-  { name: 'STARTER', icon: 'default', searchTerm: 'starter basic women' },
-  { name: 'LIGHTSTAR', icon: 'running', searchTerm: 'lightweight women' },
-  { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic women' }
-] as const;
-
-const kidsCategories = [
-  { name: 'SUPER-STAR', icon: 'default', searchTerm: 'superstar kids' },
-  { name: 'MARATHON', icon: 'running', searchTerm: 'marathon running kids' },
-  { name: 'STARDAN', icon: 'default', searchTerm: 'classic retro kids' },
-  { name: 'PLATFORM', icon: 'default', searchTerm: 'platform kids' },
-  { name: 'V-STAR', icon: 'default', searchTerm: 'v-shape design kids' },
-  { name: 'SKY-STAR', icon: 'high', searchTerm: 'high-top sky kids' },
-  { name: 'FRANCY', icon: 'high', searchTerm: 'francy style kids' },
-  { name: 'SUPERSTAR', icon: 'default', searchTerm: 'superstar kids' },
-  { name: 'LIGHTSTAR', icon: 'running', searchTerm: 'lightweight kids' },
-  { name: 'BALL STAR', icon: 'high', searchTerm: 'basketball kids' },
-  { name: 'TRUE-STAR', icon: 'high', searchTerm: 'premium luxury kids', badge: 'NEW' },
-  { name: 'RUNNING SOLE', icon: 'running', searchTerm: 'running athletic kids' },
-  { name: 'MID STAR', icon: 'high', searchTerm: 'mid-top kids' },
-  { name: 'PURESTAR', icon: 'default', searchTerm: 'pure white minimalist kids' },
-  { name: 'SLIDE', icon: 'slide', searchTerm: 'slide sandal kids' },
-  { name: 'GGDB CLASSICS', icon: 'default', searchTerm: 'golden goose classic kids' },
-  { name: 'STARTER', icon: 'default', searchTerm: 'starter basic kids' },
-  { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic kids' }
-] as const;
-
 export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: MobileCategoriesSidebarProps) {
   const [currentView, setCurrentView] = useState<'main' | 'men' | 'women' | 'kids'>('main');
   const navigate = useNavigate();
+  
+  // Fetch featured collections from Convex
+  const featuredCollections = useQuery(api.homepage.getFeaturedCollections);
 
   // Auto-navigate to selected gender when sidebar opens
   useEffect(() => {
@@ -109,8 +51,16 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
   // If selectedGender is provided, we should never show the main view
   const shouldShowMainView = !selectedGender;
 
-  const handleCategoryClick = (category: typeof mensCategories[0] | typeof womensCategories[0] | typeof kidsCategories[0]) => {
-    navigate(`/catalog?search=${encodeURIComponent(category.searchTerm)}`);
+  const handleCategoryClick = (collection: typeof featuredCollections[0]) => {
+    if (collection.linkUrl) {
+      if (collection.linkUrl.startsWith('http')) {
+        window.location.href = collection.linkUrl;
+      } else {
+        navigate(collection.linkUrl);
+      }
+    } else if (collection.collectionHandle) {
+      navigate(`/catalog?collection=${collection.collectionHandle}`);
+    }
     onClose();
   };
 
@@ -125,10 +75,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
   };
 
   const getCurrentCategories = () => {
-    if (currentView === 'men') return mensCategories;
-    if (currentView === 'women') return womensCategories;
-    if (currentView === 'kids') return kidsCategories;
-    return [];
+    return featuredCollections || [];
   };
 
   const getTitle = () => {
@@ -196,7 +143,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                   /* Main gender selection */
                   <div className="p-4 space-y-3">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Choose a category to explore our sneaker collections
+                      Choose a category to explore our footwear collections
                     </p>
                     
                     <motion.button
@@ -207,11 +154,11 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                     >
                       <div className="flex items-center gap-3">
                         <div className="text-primary">
-                          <SneakerIcon variant="default" />
+                          <FootwearIcon variant="default" />
                         </div>
                         <div className="text-left">
                           <h3 className="font-medium text-foreground">Men's Collection</h3>
-                          <p className="text-sm text-muted-foreground">18 categories</p>
+                          <p className="text-sm text-muted-foreground">{featuredCollections?.length || 0} categories</p>
                         </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -225,11 +172,11 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                     >
                       <div className="flex items-center gap-3">
                         <div className="text-primary">
-                          <SneakerIcon variant="heel" />
+                          <FootwearIcon variant="heel" />
                         </div>
                         <div className="text-left">
                           <h3 className="font-medium text-foreground">Women's Collection</h3>
-                          <p className="text-sm text-muted-foreground">18 categories</p>
+                          <p className="text-sm text-muted-foreground">{featuredCollections?.length || 0} categories</p>
                         </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -243,11 +190,11 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                     >
                       <div className="flex items-center gap-3">
                         <div className="text-primary">
-                          <SneakerIcon variant="default" />
+                          <FootwearIcon variant="default" />
                         </div>
                         <div className="text-left">
                           <h3 className="font-medium text-foreground">Kids' Collection</h3>
-                          <p className="text-sm text-muted-foreground">18 categories</p>
+                          <p className="text-sm text-muted-foreground">{featuredCollections?.length || 0} categories</p>
                         </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -282,35 +229,30 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                   /* Category listing */
                   <div className="p-4">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Browse {currentView === 'men' ? "men's" : "women's"} sneaker categories
+                      Browse {currentView === 'men' ? "men's" : currentView === 'women' ? "women's" : "kids'"} footwear categories
                     </p>
                     
                     <div className="space-y-2">
-                      {getCurrentCategories().map((category, index) => (
+                      {getCurrentCategories().map((collection, index) => (
                         <motion.button
-                          key={category.name}
+                          key={collection.id}
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
                           whileHover={{ scale: 1.02, x: 4 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => handleCategoryClick(category)}
+                          onClick={() => handleCategoryClick(collection)}
                           className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/60 transition-all duration-200 group border border-transparent hover:border-border/40"
                         >
                           <div className="flex items-center gap-3">
                             <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                              <SneakerIcon variant={category.icon as 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel'} />
+                              <FootwearIcon variant="default" />
                             </div>
                             <div className="text-left">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors uppercase tracking-wide">
-                                  {category.name}
+                                  {collection.title}
                                 </span>
-                                {category.badge && (
-                                  <span className="px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded uppercase">
-                                    {category.badge}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -325,7 +267,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
               {/* Footer */}
               <div className="p-4 border-t border-border/30 bg-muted/10">
                 <p className="text-xs text-muted-foreground text-center">
-                  Premium sneakers for every style
+                  Premium footwear for every style
                 </p>
               </div>
             </div>

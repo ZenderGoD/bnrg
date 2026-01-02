@@ -196,7 +196,7 @@ export default function Women() {
         <ProductGrid
           products={products}
           isLoading={isLoading}
-          title="Women's Sneakers"
+          title="Women's Footwear"
           subtitle="Experience elegance and comfort with every stride"
         />
       </motion.div>

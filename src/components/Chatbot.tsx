@@ -222,7 +222,7 @@ export function Chatbot() {
                           Welcome to MONTEVELORIS!
                         </h4>
                         <p className="text-sm text-muted-foreground/90 max-w-xs mx-auto leading-relaxed mb-5">
-                          I'm your AI shopping assistant. Ask me about sneakers, sizes, orders, or anything else!
+                          I'm your AI shopping assistant. Ask me about footwear, sizes, orders, or anything else!
                         </p>
                         <div className="flex flex-wrap gap-2.5 justify-center">
                           <Button 
@@ -393,7 +393,7 @@ export function Chatbot() {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        placeholder="Ask about sneakers, orders, or anything..."
+                        placeholder="Ask about footwear, orders, or anything..."
                         disabled={isLoading}
                         className={cn(
                           "h-11 pr-14 bg-background/80 backdrop-blur-sm border-border/30 rounded-xl",

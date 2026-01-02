@@ -49,13 +49,13 @@ const SearchPage = () => {
           className="text-center mb-8"
         >
           <h1 className="text-4xl font-bold mb-4">Search Products</h1>
-          <p className="text-muted-foreground mb-8">Find your perfect sneakers</p>
+          <p className="text-muted-foreground mb-8">Find your perfect footwear</p>
           
           <div className="relative max-w-md mx-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               type="text"
-              placeholder="Search for sneakers..."
+              placeholder="Search for footwear..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"

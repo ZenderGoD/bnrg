@@ -33,11 +33,11 @@ interface ChatbotResponse {
 const INTENT_PATTERNS = {
   // Product search intents
   search_products: [
-    /(?:show|find|search|look|want|need|get).*(shoes?|sneakers?|footwear|socks?)/i,
-    /(?:red|blue|green|black|white|yellow|orange|purple|pink|brown|gray|grey).*(shoes?|sneakers?|socks?)/i,
+    /(?:show|find|search|look|want|need|get).*(shoes?|footwear|socks?)/i,
+    /(?:red|blue|green|black|white|yellow|orange|purple|pink|brown|gray|grey).*(shoes?|footwear|socks?)/i,
     /(?:nike|adidas|jordan|puma|reebok|converse|vans)/i,
     /(?:running|athletic|sports?|basketball|tennis|casual|formal)/i,
-    /(?:men'?s?|women'?s?|kids?|unisex).*(shoes?|sneakers?|socks?)/i,
+    /(?:men'?s?|women'?s?|kids?|unisex).*(shoes?|footwear|socks?)/i,
     /size\s*\d+/i,
     /under\s*\$?\d+/i,
     /socks?/i,
@@ -50,11 +50,11 @@ const INTENT_PATTERNS = {
   ],
   
   navigate_men: [
-    /(?:men'?s?|male|guys?).*(section|category|shoes?|sneakers?)/i,
+    /(?:men'?s?|male|guys?).*(section|category|shoes?|footwear)/i,
   ],
   
   navigate_women: [
-    /(?:women'?s?|female|ladies|girls?).*(section|category|shoes?|sneakers?)/i,
+    /(?:women'?s?|female|ladies|girls?).*(section|category|shoes?|footwear)/i,
   ],
   
   // Cart and order intents
@@ -124,14 +124,14 @@ const INTENT_PATTERNS = {
 // Response templates
 const RESPONSE_TEMPLATES = {
   greeting: [
-    "Hey there! 👋 Welcome to MONTEVELORIS! I'm here to help you find the perfect sneakers. What are you looking for today?",
+    "Hey there! 👋 Welcome to MONTEVELORIS! I'm here to help you find the perfect footwear. What are you looking for today?",
     "Hello! I'm your MONTEVELORIS shopping assistant. Whether you need help finding shoes, checking orders, or have questions, I'm here to help!",
-    "Hi! Ready to find some amazing sneakers? I can help you search our collection, check sizes, or answer any questions you have.",
+    "Hi! Ready to find some amazing footwear? I can help you search our collection, check sizes, or answer any questions you have.",
   ],
   
   search_products: [
     "I found some great options for you! Here are the products that match what you're looking for:",
-    "Perfect! I've found some sneakers that might interest you:",
+    "Perfect! I've found some footwear that might interest you:",
     "Here are some awesome options from our collection:",
   ],
   
@@ -228,7 +228,7 @@ class ChatbotService {
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
         return {
-          message: "I'm here to help! Could you try asking in a different way? For example:\n• \"Show me sneakers\"\n• \"Browse men's collection\"\n• \"What's in my cart?\"",
+          message: "I'm here to help! Could you try asking in a different way? For example:\n• \"Show me footwear\"\n• \"Browse men's collection\"\n• \"What's in my cart?\"",
           intent: 'get_help',
           confidence: 0,
         };
@@ -482,14 +482,14 @@ class ChatbotService {
 
       case 'navigate_men':
         return {
-          message: "I'll take you to our men's collection! Check out our latest sneakers for men.",
-          navigation: { path: '/men', label: "Shop Men's Sneakers" },
+          message: "I'll take you to our men's collection! Check out our latest footwear for men.",
+          navigation: { path: '/men', label: "Shop Men's Footwear" },
         };
 
       case 'navigate_women':
         return {
-          message: "Here's our women's collection! Discover amazing sneakers for women.",
-          navigation: { path: '/women', label: "Shop Women's Sneakers" },
+          message: "Here's our women's collection! Discover amazing footwear for women.",
+          navigation: { path: '/women', label: "Shop Women's Footwear" },
         };
 
       case 'view_cart':
@@ -674,25 +674,25 @@ class ChatbotService {
 
         if (affordableProducts.length > 0) {
           return {
-            message: `Great! I found ${affordableProducts.length} sneakers under $${maxPrice}:`,
+            message: `Great! I found ${affordableProducts.length} footwear under $${maxPrice}:`,
             products: affordableProducts.slice(0, 5),
           };
         } else {
           return {
-            message: `I don't have any sneakers under $${maxPrice} right now, but here are some great value options:`,
+            message: `I don't have any footwear under $${maxPrice} right now, but here are some great value options:`,
             products: allProducts.slice(0, 3),
           };
         }
       } catch (error) {
         return {
-          message: "Let me help you find sneakers in your price range! Check out our catalog with price filters.",
+          message: "Let me help you find footwear in your price range! Check out our catalog with price filters.",
           navigation: { path: '/catalog', label: 'Browse by Price' },
         };
       }
     }
 
     return {
-      message: "I can help you find sneakers in your budget! What's your price range?",
+      message: "I can help you find footwear in your budget! What's your price range?",
       navigation: { path: '/catalog', label: 'Browse All Prices' },
     };
   }
@@ -706,7 +706,7 @@ class ChatbotService {
     if (sizeMatch) {
       const size = sizeMatch[1];
       return {
-        message: `I'll help you find sneakers in size ${size}! Most of our products have detailed size information on their individual pages.`,
+        message: `I'll help you find footwear in size ${size}! Most of our products have detailed size information on their individual pages.`,
         navigation: { path: '/catalog', label: `Shop Size ${size}` },
       };
     }
@@ -825,14 +825,14 @@ class ChatbotService {
       if (brands.includes(word)) productTerms.push(word);
     });
     
-    // Product type detection - common sneaker/shoe terms
-    const productTypes = ['sneakers', 'sneaker', 'shoes', 'shoe', 'boots', 'boot', 'runners', 'running', 'basketball', 'tennis', 'casual', 'athletic', 'sports', 'trainers', 'trainer', 'socks', 'sock'];
+    // Product type detection - common footwear/shoe terms
+    const productTypes = ['footwear', 'shoes', 'shoe', 'boots', 'boot', 'runners', 'running', 'basketball', 'tennis', 'casual', 'athletic', 'sports', 'trainers', 'trainer', 'socks', 'sock'];
     words.forEach(word => {
       if (productTypes.includes(word)) productTerms.push(word);
     });
     
     // Category detection
-    const categories = ['running', 'athletic', 'sports', 'basketball', 'tennis', 'casual', 'formal', 'sneakers', 'shoes'];
+    const categories = ['running', 'athletic', 'sports', 'basketball', 'tennis', 'casual', 'formal', 'footwear', 'shoes'];
     words.forEach(word => {
       if (categories.includes(word)) productTerms.push(word);
     });

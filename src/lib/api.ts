@@ -1,4 +1,4 @@
-// Convex API integration for MONTEVELORIS sneaker store
+// Convex API integration for MONTEVELORIS footwear store
 import { ConvexReactClient } from "convex/react";
 // Import Convex generated API
 import { api } from "../../convex/_generated/api";

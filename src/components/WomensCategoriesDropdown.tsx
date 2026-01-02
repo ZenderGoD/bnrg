@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllProducts, ShopifyProduct } from '@/lib/shopify';
+import { getAllProducts, getProductsByCollection, ShopifyProduct } from '@/lib/shopify';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 interface WomensCategoriesDropdownProps {
   isVisible: boolean;
 }
 
-// Sneaker icon component for consistent minimal icons
-const SneakerIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel' }) => {
+// Footwear icon component for consistent minimal icons
+const FootwearIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel' }) => {
   const iconPaths = {
     default: "M3 18h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V8H3v2z M2 20h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H2c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2z",
     high: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
@@ -25,58 +27,72 @@ const SneakerIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | '
   );
 };
 
-const womensCategories = [
-  { name: 'SUPER-STAR', icon: 'default', searchTerm: 'superstar women' },
-  { name: 'BALL STAR', icon: 'high', searchTerm: 'basketball women' },
-  { name: 'MARATHON', icon: 'running', searchTerm: 'marathon running women' },
-  { name: 'TRUE-STAR', icon: 'high', searchTerm: 'premium luxury women', badge: 'NEW' },
-  { name: 'STARDAN', icon: 'default', searchTerm: 'classic retro women' },
-  { name: 'RUNNING SOLE', icon: 'running', searchTerm: 'running athletic women' },
-  { name: 'PLATFORM', icon: 'heel', searchTerm: 'platform sneakers women' },
-  { name: 'MID STAR', icon: 'high', searchTerm: 'mid-top women' },
-  { name: 'V-STAR', icon: 'default', searchTerm: 'v-shape design women' },
-  { name: 'PURESTAR', icon: 'default', searchTerm: 'pure white minimalist women' },
-  { name: 'SKY-STAR', icon: 'high', searchTerm: 'high-top sky women' },
-  { name: 'SLIDE', icon: 'slide', searchTerm: 'slide sandal women' },
-  { name: 'FRANCY', icon: 'high', searchTerm: 'francy style women' },
-  { name: 'GGDB CLASSICS', icon: 'default', searchTerm: 'golden goose classic women' },
-  { name: 'SUPERSTAR', icon: 'default', searchTerm: 'superstar women' },
-  { name: 'STARTER', icon: 'default', searchTerm: 'starter basic women' },
-  { name: 'LIGHTSTAR', icon: 'running', searchTerm: 'lightweight women' },
-  { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic women' }
-] as const;
-
 export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdownProps) {
-  const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [collectionProducts, setCollectionProducts] = useState<Record<string, ShopifyProduct[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Fetch featured collections from Convex
+  const featuredCollections = useQuery(api.homepage.getFeaturedCollections);
 
   useEffect(() => {
-    if (isVisible && products.length === 0) {
-      const fetchProducts = async () => {
+    const fetchCollectionProducts = async () => {
+      if (!featuredCollections || featuredCollections.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
         setIsLoading(true);
-        try {
-          // Get a variety of products to showcase
-          const fetchedProducts = await getAllProducts(12);
-          setProducts(fetchedProducts);
-        } catch (error) {
-          console.error('Failed to fetch products for women\'s categories:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchProducts();
+        const productsMap: Record<string, ShopifyProduct[]> = {};
+        
+        await Promise.all(
+          featuredCollections.map(async (collection) => {
+            try {
+              if (collection.productHandles.length > 0) {
+                const allProducts = await getAllProducts(100);
+                const selectedProducts = allProducts.filter(p => 
+                  collection.productHandles.includes(p.handle)
+                );
+                productsMap[collection.id] = selectedProducts.slice(0, 4);
+              } else if (collection.collectionHandle) {
+                const collectionProducts = await getProductsByCollection(
+                  collection.collectionHandle,
+                  4
+                );
+                productsMap[collection.id] = collectionProducts;
+              }
+            } catch (error) {
+              console.error(`Failed to fetch products for collection ${collection.id}:`, error);
+              productsMap[collection.id] = [];
+            }
+          })
+        );
+        
+        setCollectionProducts(productsMap);
+      } catch (error) {
+        console.error('Failed to fetch collection products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isVisible && featuredCollections) {
+      fetchCollectionProducts();
     }
-  }, [isVisible, products.length]);
+  }, [isVisible, featuredCollections]);
 
-  const handleCategoryClick = (category: typeof womensCategories[0]) => {
-    // Navigate to catalog with search term
-    navigate(`/catalog?search=${encodeURIComponent(category.searchTerm)}`);
-  };
-
-  const getFeaturedProduct = (index: number) => {
-    return products[index % products.length];
+  const handleCategoryClick = (collection: typeof featuredCollections[0]) => {
+    if (collection.linkUrl) {
+      if (collection.linkUrl.startsWith('http')) {
+        window.location.href = collection.linkUrl;
+      } else {
+        navigate(collection.linkUrl);
+      }
+    } else if (collection.collectionHandle) {
+      navigate(`/catalog?collection=${collection.collectionHandle}`);
+    }
   };
 
   return (
@@ -110,56 +126,57 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
               {/* Categories Grid */}
               <div className="space-y-1">
                 <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Categories</h4>
-                <div className="grid grid-cols-2 gap-1">
-                  {womensCategories.map((category, index) => (
-                    <motion.button
-                      key={category.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                      whileHover={{ scale: 1.02, x: 4 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleCategoryClick(category)}
-                      onMouseEnter={() => setHoveredCategory(category.name)}
-                      onMouseLeave={() => setHoveredCategory(null)}
-                      className={`flex items-center justify-between p-3 rounded-lg text-left transition-all duration-200 group ${
-                        hoveredCategory === category.name
-                          ? 'bg-primary/15 border-primary/30 shadow-sm'
-                          : 'hover:bg-muted/80 border-transparent'
-                      } border`}
-                    >
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
-                          <SneakerIcon variant={category.icon as 'default' | 'high' | 'running' | 'slide' | 'boot' | 'heel'} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-medium uppercase tracking-wide transition-colors ${
-                              hoveredCategory === category.name ? 'text-primary' : 'text-foreground'
-                            }`}>
-                              {category.name}
-                            </span>
-                            {category.badge && (
-                              <span className="px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded uppercase">
-                                {category.badge}
+                {featuredCollections && featuredCollections.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-1">
+                    {featuredCollections.map((collection, index) => (
+                      <motion.button
+                        key={collection.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        whileHover={{ scale: 1.02, x: 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleCategoryClick(collection)}
+                        onMouseEnter={() => setHoveredCategory(collection.id)}
+                        onMouseLeave={() => setHoveredCategory(null)}
+                        className={`flex items-center justify-between p-3 rounded-lg text-left transition-all duration-200 group ${
+                          hoveredCategory === collection.id
+                            ? 'bg-primary/15 border-primary/30 shadow-sm'
+                            : 'hover:bg-muted/80 border-transparent'
+                        } border`}
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
+                            <FootwearIcon variant="default" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-medium uppercase tracking-wide transition-colors ${
+                                hoveredCategory === collection.id ? 'text-primary' : 'text-foreground'
+                              }`}>
+                                {collection.title}
                               </span>
-                            )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <motion.div
-                        initial={false}
-                        animate={{ rotate: hoveredCategory === category.name ? 90 : 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="text-muted-foreground group-hover:text-primary"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </motion.div>
-                    </motion.button>
-                  ))}
-                </div>
+                        <motion.div
+                          initial={false}
+                          animate={{ rotate: hoveredCategory === collection.id ? 90 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-muted-foreground group-hover:text-primary"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </motion.div>
+                      </motion.button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    <p className="text-sm">No categories available</p>
+                  </div>
+                )}
               </div>
 
               {/* Featured Products */}
@@ -171,11 +188,11 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                       <div key={i} className="aspect-square bg-muted animate-pulse rounded-lg" />
                     ))}
                   </div>
-                ) : (
+                ) : featuredCollections && featuredCollections.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
-                    {products.slice(4, 8).map((product, index) => {
-                      const relatedCategory = womensCategories[index % womensCategories.length];
-                      return (
+                    {featuredCollections.slice(0, 1).flatMap((collection) => {
+                      const products = collectionProducts[collection.id] || [];
+                      return products.slice(0, 4).map((product, index) => (
                         <motion.div
                           key={product.id}
                           initial={{ opacity: 0, scale: 0.8 }}
@@ -197,7 +214,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                             {/* Category Badge */}
                             <div className="absolute top-2 left-2 px-2 py-1 bg-background/95 backdrop-blur-md rounded-md border border-border/30">
                               <span className="text-[10px] font-medium text-foreground uppercase tracking-wide">
-                                {relatedCategory.name}
+                                {collection.title}
                               </span>
                             </div>
                           </div>
@@ -211,12 +228,10 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                             </p>
                           </div>
                         </motion.div>
-                      );
+                      ));
                     })}
                   </div>
-                )}
-                
-                {!isLoading && products.length === 0 && (
+                ) : (
                   <div className="text-center text-muted-foreground py-8">
                     <p className="text-sm">No products available</p>
                   </div>
@@ -228,7 +243,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
             <div className="mt-6 pt-4 border-t border-border/50 bg-muted/20 -mx-6 px-6 py-4 mt-6">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Discover premium sneakers designed for women
+                  Discover premium footwear designed for women
                 </p>
                 <div className="flex items-center gap-2">
                   <motion.button

@@ -74,7 +74,7 @@ const NotFound = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            The page you're looking for seems to have stepped out of our sneaker collection.
+            The page you're looking for seems to have stepped out of our footwear collection.
           </motion.p>
 
           {/* Action Buttons */}

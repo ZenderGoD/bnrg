@@ -1,77 +1,10 @@
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllProducts, ShopifyProduct } from '@/lib/shopify';
-import { useNavigate } from 'react-router-dom';
 
 interface KidsCategoriesDropdownProps {
   isVisible: boolean;
 }
 
-// Sneaker icon component for consistent minimal icons
-const SneakerIcon = ({ variant = 'default' }: { variant?: 'default' | 'high' | 'running' | 'slide' }) => {
-  const iconPaths = {
-    default: "M3 18h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V8H3v2z M2 20h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H2c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2z",
-    high: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-    running: "M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-.8-4.3-2.1l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z",
-    slide: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-  };
-  
-  return (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-      <path d={iconPaths[variant]} />
-    </svg>
-  );
-};
-
-const kidsCategories = [
-  { name: 'SUPER-STAR', icon: 'default', searchTerm: 'superstar kids' },
-  { name: 'MARATHON', icon: 'running', searchTerm: 'marathon running kids' },
-  { name: 'STARDAN', icon: 'default', searchTerm: 'classic retro kids' },
-  { name: 'PLATFORM', icon: 'default', searchTerm: 'platform kids' },
-  { name: 'V-STAR', icon: 'default', searchTerm: 'v-shape design kids' },
-  { name: 'SKY-STAR', icon: 'high', searchTerm: 'high-top sky kids' },
-  { name: 'FRANCY', icon: 'high', searchTerm: 'francy style kids' },
-  { name: 'SUPERSTAR', icon: 'default', searchTerm: 'superstar kids' },
-  { name: 'LIGHTSTAR', icon: 'running', searchTerm: 'lightweight kids' },
-  { name: 'BALL STAR', icon: 'high', searchTerm: 'basketball kids' },
-  { name: 'TRUE-STAR', icon: 'high', searchTerm: 'premium luxury kids', badge: 'NEW' },
-  { name: 'RUNNING SOLE', icon: 'running', searchTerm: 'running athletic kids' },
-  { name: 'MID STAR', icon: 'high', searchTerm: 'mid-top kids' },
-  { name: 'PURESTAR', icon: 'default', searchTerm: 'pure white minimalist kids' },
-  { name: 'SLIDE', icon: 'slide', searchTerm: 'slide sandal kids' },
-  { name: 'GGDB CLASSICS', icon: 'default', searchTerm: 'golden goose classic kids' },
-  { name: 'STARTER', icon: 'default', searchTerm: 'starter basic kids' },
-  { name: 'SPACE-STAR', icon: 'high', searchTerm: 'space futuristic kids' }
-] as const;
-
 export function KidsCategoriesDropdown({ isVisible }: KidsCategoriesDropdownProps) {
-  const [products, setProducts] = useState<ShopifyProduct[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isVisible && products.length === 0) {
-      const fetchProducts = async () => {
-        setIsLoading(true);
-        try {
-          // Get a variety of products to showcase
-          const fetchedProducts = await getAllProducts(12);
-          setProducts(fetchedProducts);
-        } catch (error) {
-          console.error('Failed to fetch products for kids\' categories:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchProducts();
-    }
-  }, [isVisible, products.length]);
-
-  const handleCategoryClick = (category: typeof kidsCategories[0]) => {
-    // Navigate to catalog with search term
-    navigate(`/catalog?search=${encodeURIComponent(category.searchTerm)}`);
-  };
   return (
     <AnimatePresence>
       {isVisible && (
@@ -99,4 +32,3 @@ export function KidsCategoriesDropdown({ isVisible }: KidsCategoriesDropdownProp
     </AnimatePresence>
   );
 }
-

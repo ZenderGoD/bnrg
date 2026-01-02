@@ -74,7 +74,7 @@ const Catalog = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
             <div>
               <h1 className="text-4xl font-bold mb-2">Complete Catalog</h1>
-              <p className="text-muted-foreground">Discover all our premium sneakers</p>
+              <p className="text-muted-foreground">Discover all our premium footwear</p>
             </div>
             
             <div className="flex items-center gap-4 mt-4 lg:mt-0">

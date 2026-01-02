@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* MONTEVELORIS Brand Colors - Sneaker focused */
+    /* MONTEVELORIS Brand Colors - Footwear focused */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
 
@@ -69,7 +69,7 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark theme for premium sneaker experience */
+    /* Dark theme for premium footwear experience */
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
 
