@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Heart, ArrowLeft, Share, ZoomIn, ChevronLeft, ChevronRight, Star, ShieldCheck, Truck, RotateCcw, ChevronDown, ChevronUp, Ruler } from 'lucide-react';
+import { ShoppingBag, Heart, ArrowLeft, Share, ZoomIn, ChevronLeft, ChevronRight, Star, ShieldCheck, Truck, RotateCcw, ChevronDown, ChevronUp, Ruler, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -23,7 +23,8 @@ export default function Product() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColorVariant, setSelectedColorVariant] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [selectedSizes, setSelectedSizes] = useState<Array<{ index: number; variantId: string }>>([{ index: 0, variantId: '' }]);
   const [isLiked, setIsLiked] = useState(false);
   const [isZoomMode, setIsZoomMode] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
@@ -200,17 +201,53 @@ export default function Product() {
       return;
     }
 
-    if (!selectedVariant || !product) return;
+    if (!product) return;
     
-    if (!selectedSize) {
+    // Validate all selected sizes
+    const invalidSizes = selectedSizes.filter(s => !s.variantId || s.variantId === '');
+    if (invalidSizes.length > 0) {
       toast({
         title: "Size required",
-        description: "Please select a size before adding to cart.",
+        description: "Please select sizes for all items before adding to cart.",
       });
       return;
     }
     
-    await addToCart(selectedVariant, quantity);
+    // Add each item to cart
+    for (const sizeSelection of selectedSizes) {
+      if (sizeSelection.variantId) {
+        await addToCart(sizeSelection.variantId, 1);
+      }
+    }
+    
+    toast({
+      title: "Added to cart",
+      description: `${quantity} item(s) added to your cart.`,
+    });
+  };
+
+  // Update selected sizes when quantity changes
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity < 1) return;
+    if (newQuantity > 10) {
+      toast({
+        title: "Maximum quantity",
+        description: "You can add up to 10 items at a time.",
+      });
+      return;
+    }
+    
+    setQuantity(newQuantity);
+    const newSelectedSizes = Array.from({ length: newQuantity }, (_, i) => 
+      selectedSizes[i] || { index: i, variantId: i === 0 ? selectedSize : '' }
+    );
+    setSelectedSizes(newSelectedSizes);
+    
+    // Update first selection if it exists
+    if (newSelectedSizes[0] && selectedSize) {
+      newSelectedSizes[0].variantId = selectedSize;
+      setSelectedSizes(newSelectedSizes);
+    }
   };
 
   if (isLoading) {
@@ -246,6 +283,8 @@ export default function Product() {
   const variants = product.variants.edges;
   const currentVariant = getCurrentVariant();
   const price = currentVariant ? parseFloat(currentVariant.price.amount) : parseFloat(product.priceRange.minVariantPrice.amount);
+  const mrp = product.mrp;
+  const discountPercentage = mrp && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
   const colorVariants = getVariantsByColor();
   const sizeOptions = getSizeOptions();
 
@@ -393,9 +432,21 @@ export default function Product() {
                     </div>
                   </div>
                   <h1 className="text-3xl font-bold">{product.title}</h1>
-                  <p className="text-2xl font-semibold">₹{price.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">MRP in Indian currency per pair</p>
-                  <p className="text-sm text-muted-foreground">Inclusive of all taxes</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <p className="text-2xl font-semibold">₹{price.toFixed(2)}</p>
+                      {mrp && mrp > price && (
+                        <>
+                          <p className="text-lg text-muted-foreground line-through">₹{mrp.toFixed(2)}</p>
+                          <Badge className="bg-green-600 text-white">{discountPercentage}% OFF</Badge>
+                        </>
+                      )}
+                    </div>
+                    {mrp && mrp > price && (
+                      <p className="text-sm text-muted-foreground">MRP: ₹{mrp.toFixed(2)}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">Inclusive of all taxes</p>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -455,6 +506,38 @@ export default function Product() {
 
             <Separator />
 
+            {/* Quantity Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Quantity</h3>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="px-4 py-2 min-w-[3rem] text-center font-medium">{quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    disabled={quantity >= 10}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Color Selection */}
             {colorVariants.length > 1 && (
               <div className="space-y-4">
@@ -496,7 +579,7 @@ export default function Product() {
             {/* Size Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">Shoe Sizes (US)</h3>
+                <h3 className="font-medium">Shoe Sizes (UK)</h3>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="link" className="text-sm p-0 h-auto hover:text-primary">
@@ -504,14 +587,14 @@ export default function Product() {
                       Size Guide
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Ruler className="h-5 w-5" />
                         Size Guide
                       </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-y-auto flex-1 pr-2">
                       <div className="text-sm text-muted-foreground">
                         <p className="mb-3">Find your perfect fit with our size guide:</p>
                       </div>
@@ -521,7 +604,6 @@ export default function Product() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b">
-                              <th className="text-left py-2 font-medium">US Size</th>
                               <th className="text-left py-2 font-medium">UK Size</th>
                               <th className="text-left py-2 font-medium">EU Size</th>
                               <th className="text-left py-2 font-medium">CM</th>
@@ -529,22 +611,27 @@ export default function Product() {
                           </thead>
                           <tbody className="text-muted-foreground">
                             {[
-                              { us: '6', uk: '5.5', eu: '39', cm: '24.5' },
-                              { us: '6.5', uk: '6', eu: '39.5', cm: '25' },
-                              { us: '7', uk: '6.5', eu: '40', cm: '25.5' },
-                              { us: '7.5', uk: '7', eu: '40.5', cm: '26' },
-                              { us: '8', uk: '7.5', eu: '41', cm: '26.5' },
-                              { us: '8.5', uk: '8', eu: '42', cm: '27' },
-                              { us: '9', uk: '8.5', eu: '42.5', cm: '27.5' },
-                              { us: '9.5', uk: '9', eu: '43', cm: '28' },
-                              { us: '10', uk: '9.5', eu: '44', cm: '28.5' },
-                              { us: '10.5', uk: '10', eu: '44.5', cm: '29' },
-                              { us: '11', uk: '10.5', eu: '45', cm: '29.5' },
-                              { us: '11.5', uk: '11', eu: '45.5', cm: '30' },
-                              { us: '12', uk: '11.5', eu: '46', cm: '30.5' }
+                              { uk: '3', eu: '35.5', cm: '22' },
+                              { uk: '3.5', eu: '36', cm: '22.5' },
+                              { uk: '4', eu: '36.5', cm: '23' },
+                              { uk: '4.5', eu: '37', cm: '23.5' },
+                              { uk: '5', eu: '37.5', cm: '24' },
+                              { uk: '5.5', eu: '38', cm: '24.5' },
+                              { uk: '6', eu: '38.5', cm: '25' },
+                              { uk: '6.5', eu: '39', cm: '25.5' },
+                              { uk: '7', eu: '39.5', cm: '26' },
+                              { uk: '7.5', eu: '40', cm: '26.5' },
+                              { uk: '8', eu: '40.5', cm: '27' },
+                              { uk: '8.5', eu: '41', cm: '27.5' },
+                              { uk: '9', eu: '42', cm: '28' },
+                              { uk: '9.5', eu: '42.5', cm: '28.5' },
+                              { uk: '10', eu: '43', cm: '29' },
+                              { uk: '10.5', eu: '43.5', cm: '29.5' },
+                              { uk: '11', eu: '44', cm: '30' },
+                              { uk: '11.5', eu: '44.5', cm: '30.5' },
+                              { uk: '12', eu: '45', cm: '31' }
                             ].map((size) => (
-                              <tr key={size.us} className="border-b border-border/50">
-                                <td className="py-2">{size.us}</td>
+                              <tr key={size.uk} className="border-b border-border/50">
                                 <td className="py-2">{size.uk}</td>
                                 <td className="py-2">{size.eu}</td>
                                 <td className="py-2">{size.cm}</td>
@@ -575,68 +662,101 @@ export default function Product() {
                   </DialogContent>
                 </Dialog>
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {sizeOptions.map((sizeOption) => (
-                  <Button
-                    key={sizeOption.id}
-                    variant={selectedSize === sizeOption.id ? "default" : "outline"}
-                    className={`h-12 ${
-                      !sizeOption.available 
-                        ? 'opacity-50 cursor-not-allowed line-through' 
-                        : selectedSize === sizeOption.id 
-                          ? 'bg-primary text-primary-foreground' 
-                          : ''
-                    }`}
-                    onClick={() => {
-                      if (sizeOption.available) {
-                        setSelectedSize(sizeOption.id);
-                        setSelectedVariant(sizeOption.id);
-                      }
-                    }}
-                    disabled={!sizeOption.available}
-                  >
-                    {sizeOption.size}
-                  </Button>
-                ))}
-              </div>
-              {selectedSize && (
-                <p className="text-sm text-muted-foreground">
-                  <ShieldCheck className="inline h-4 w-4 mr-1" />
-                  True to size. We recommend ordering your usual size.
-                </p>
+              {quantity === 1 ? (
+                <>
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                    {sizeOptions.map((sizeOption) => (
+                      <button
+                        key={sizeOption.id}
+                        type="button"
+                        className={`px-4 py-2 rounded-md border-2 transition-all ${
+                          !sizeOption.available 
+                            ? 'opacity-50 cursor-not-allowed line-through border-border text-muted-foreground' 
+                            : selectedSize === sizeOption.id 
+                              ? 'bg-primary text-primary-foreground border-primary' 
+                              : 'border-border hover:border-primary hover:text-primary'
+                        }`}
+                        onClick={() => {
+                          if (sizeOption.available) {
+                            setSelectedSize(sizeOption.id);
+                            setSelectedVariant(sizeOption.id);
+                            setSelectedSizes([{ index: 0, variantId: sizeOption.id }]);
+                          }
+                        }}
+                        disabled={!sizeOption.available}
+                      >
+                        {sizeOption.size}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedSize && (
+                    <p className="text-sm text-muted-foreground">
+                      <ShieldCheck className="inline h-4 w-4 mr-1" />
+                      True to size. We recommend ordering your usual size.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {Array.from({ length: quantity }).map((_, idx) => {
+                    const currentSelection = selectedSizes[idx] || { index: idx, variantId: '' };
+                    return (
+                      <div key={idx} className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Item {idx + 1} - Select Size:
+                        </label>
+                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                          {sizeOptions.map((sizeOption) => (
+                            <button
+                              key={sizeOption.id}
+                              type="button"
+                              className={`px-4 py-2 rounded-md border-2 transition-all text-sm ${
+                                !sizeOption.available 
+                                  ? 'opacity-50 cursor-not-allowed line-through border-border text-muted-foreground' 
+                                  : currentSelection.variantId === sizeOption.id 
+                                    ? 'bg-primary text-primary-foreground border-primary' 
+                                    : 'border-border hover:border-primary hover:text-primary'
+                              }`}
+                              onClick={() => {
+                                if (sizeOption.available) {
+                                  const newSelectedSizes = [...selectedSizes];
+                                  newSelectedSizes[idx] = { index: idx, variantId: sizeOption.id };
+                                  setSelectedSizes(newSelectedSizes);
+                                  if (idx === 0) {
+                                    setSelectedSize(sizeOption.id);
+                                    setSelectedVariant(sizeOption.id);
+                                  }
+                                }
+                              }}
+                              disabled={!sizeOption.available}
+                            >
+                              {sizeOption.size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {selectedSizes.every(s => s.variantId) && (
+                    <p className="text-sm text-muted-foreground">
+                      <ShieldCheck className="inline h-4 w-4 mr-1" />
+                      True to size. We recommend ordering your usual size.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* Quantity and Add to Cart */}
+            {/* Add to Cart */}
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setQuantity(quantity + 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={cartLoading || !selectedSize}
-                  className="flex-1 h-12"
-                >
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  {cartLoading ? 'Adding...' : 'Add to Bag'}
-                </Button>
-              </div>
+              <Button
+                onClick={handleAddToCart}
+                disabled={cartLoading || (quantity === 1 ? !selectedSize : selectedSizes.some(s => !s.variantId))}
+                className="w-full h-12"
+              >
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                {cartLoading ? 'Adding...' : `Add ${quantity} ${quantity === 1 ? 'Item' : 'Items'} to Bag`}
+              </Button>
             </div>
 
             {/* Product Features */}

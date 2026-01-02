@@ -211,11 +211,11 @@ All colors MUST be HSL.
 @layer components {
   /* Premium button variants */
   .btn-hero {
-    @apply bg-gradient-to-r from-primary to-accent text-primary-foreground px-8 py-4 rounded-xl font-medium shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105;
+    @apply bg-gradient-to-r from-primary to-accent text-[#052e16] px-8 py-4 rounded-xl font-medium shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105;
   }
 
   .btn-ghost-premium {
-    @apply bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-lg hover:bg-white/20 transition-all duration-300;
+    @apply bg-gradient-to-r from-primary to-accent text-[#052e16] px-6 py-3 rounded-lg font-medium shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105;
   }
 
   /* Mobile-optimized button variants */

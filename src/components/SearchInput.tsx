@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { searchProducts, ShopifyProduct, isCustomerLoggedIn, getCustomerToken } from '@/lib/shopify';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '@/lib/utils';
 
 interface SearchInputProps {
   isOpen: boolean;
@@ -167,7 +168,7 @@ export function SearchInput({ isOpen, onClose }: SearchInputProps) {
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-foreground text-sm truncate">{product.title}</h4>
                               <p className="text-xs text-muted-foreground">
-                                ${product.priceRange.minVariantPrice.amount}
+                                {formatCurrency(parseFloat(product.priceRange.minVariantPrice.amount), "INR")}
                               </p>
                             </div>
                           </motion.div>

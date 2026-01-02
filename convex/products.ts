@@ -11,24 +11,25 @@ export const getAll = query({
   handler: async (ctx, args) => {
     const limit = args.limit || 50;
     
+    let allProducts;
+    
     if (args.collection) {
-      const products = await ctx.db
+      allProducts = await ctx.db
         .query("products")
         .withIndex("by_collection", (q) => q.eq("collection", args.collection!))
-        .take(limit);
-      return products;
+        .collect();
     } else if (args.category) {
-      const products = await ctx.db
+      allProducts = await ctx.db
         .query("products")
         .withIndex("by_category", (q) => q.eq("category", args.category!))
-        .take(limit);
-      return products;
+        .collect();
     } else {
-      const products = await ctx.db
-        .query("products")
-        .take(limit);
-      return products;
+      allProducts = await ctx.db.query("products").collect();
     }
+    
+    // Filter out archived products for public queries (archived field may not exist on old products)
+    const products = allProducts.filter(p => !(p.archived === true)).slice(0, limit);
+    return products;
   },
 });
 
@@ -40,6 +41,11 @@ export const getByHandle = query({
       .query("products")
       .withIndex("by_handle", (q) => q.eq("handle", args.handle))
       .first();
+    
+    // Don't return archived products for public access
+    if (product && product.archived === true) {
+      return null;
+    }
     
     return product;
   },
@@ -67,6 +73,9 @@ export const search = query({
     
     const filtered = allProducts
       .filter((product) => {
+        // Exclude archived products from search results
+        if (product.archived === true) return false;
+        
         const titleMatch = product.title.toLowerCase().includes(searchTerm);
         const descMatch = product.description.toLowerCase().includes(searchTerm);
         const tagMatch = product.tags.some((tag) => 
@@ -87,6 +96,7 @@ export const create = mutation({
     description: v.string(),
     handle: v.string(),
     price: v.number(),
+    mrp: v.optional(v.number()),
     currencyCode: v.string(),
     images: v.array(v.object({
       url: v.string(),
@@ -128,6 +138,7 @@ export const update = mutation({
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     price: v.optional(v.number()),
+    mrp: v.optional(v.number()),
     images: v.optional(v.array(v.object({
       url: v.string(),
       altText: v.optional(v.string()),
@@ -149,6 +160,7 @@ export const update = mutation({
     }))),
     tags: v.optional(v.array(v.string())),
     category: v.optional(v.string()),
+    archived: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
@@ -156,6 +168,40 @@ export const update = mutation({
       ...updates,
       updatedAt: Date.now(),
     });
+  },
+});
+
+// Delete product (admin)
+export const deleteProduct = mutation({
+  args: { id: v.id("products") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+
+// Archive/Unarchive product (admin)
+export const archive = mutation({
+  args: {
+    id: v.id("products"),
+    archived: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      archived: args.archived,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Get all products including archived (admin only)
+export const getAllIncludingArchived = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 100;
+    const products = await ctx.db.query("products").take(limit);
+    return products;
   },
 });
 

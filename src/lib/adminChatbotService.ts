@@ -27,7 +27,7 @@ interface VisionResponse {
 }
 
 // Tool function types
-type ToolFunction = (args: any) => Promise<any>;
+type ToolFunction = (args: unknown) => Promise<unknown>;
 
 class AdminChatbotService {
   private openai: OpenAI | null = null;
@@ -212,10 +212,14 @@ Return your response as JSON with this structure:
     question: string,
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
     currentData?: Partial<ProductData>,
-    tools?: {
+    toolFunctions?: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       getProducts?: (query: string) => Promise<any[]>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       getProductById?: (id: string) => Promise<any>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       searchProducts?: (query: string) => Promise<any[]>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       updateProduct?: (id: string, data: any) => Promise<void>;
     }
   ): Promise<{ 
@@ -234,7 +238,7 @@ Return your response as JSON with this structure:
         order?: number;
       };
     };
-    toolCalls?: Array<{ name: string; args: any; result?: any }>;
+    toolCalls?: Array<{ name: string; args: unknown; result?: unknown }>;
   }> {
     try {
       const systemPrompt = `You are banerjee.boy, an AI admin assistant for MONTEVELORIS sneaker store. You can help with:
@@ -291,7 +295,7 @@ But when user describes a NEW product or provides product details, extract the d
 
 Be conversational, helpful, and proactive. When user provides product details, acknowledge what you extracted and confirm the information.`;
 
-      const tools = [
+      const toolDefinitions = [
         {
           type: 'function' as const,
           function: {
@@ -402,7 +406,7 @@ Be conversational, helpful, and proactive. When user provides product details, a
               : question 
           }
         ],
-        tools: isProductCreation ? undefined : tools, // Don't use tools for product creation
+        tools: isProductCreation ? undefined : toolDefinitions, // Don't use tools for product creation
         tool_choice: isProductCreation ? 'none' : 'auto',
         max_tokens: 1000,
         temperature: 0.7,
@@ -410,17 +414,18 @@ Be conversational, helpful, and proactive. When user provides product details, a
 
       const message = response.choices[0]?.message;
       const toolCalls = message?.tool_calls || [];
-      const toolResults: Array<{ name: string; args: any; result?: any }> = [];
+      const toolResults: Array<{ name: string; args: unknown; result?: unknown }> = [];
 
       // Execute tool calls if any
-      if (toolCalls.length > 0 && tools) {
-        const messagesWithToolResults = [
-          { role: 'system' as const, content: systemPrompt },
+      if (toolCalls.length > 0 && toolFunctions) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const messagesWithToolResults: any[] = [
+          { role: 'system', content: systemPrompt },
           ...conversationHistory.map(msg => ({
-            role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
+            role: msg.role,
             content: msg.content
           })),
-          { role: 'user' as const, content: question },
+          { role: 'user', content: question },
           message
         ];
 
@@ -431,20 +436,20 @@ Be conversational, helpful, and proactive. When user provides product details, a
             
             try {
               let result;
-              if (name === 'searchProducts' && tools.searchProducts) {
-                result = await tools.searchProducts(args.query);
-              } else if (name === 'getProductById' && tools.getProductById) {
-                result = await tools.getProductById(args.id);
-              } else if (name === 'updateProduct' && tools.updateProduct) {
-                await tools.updateProduct(args.id, args);
+              if (name === 'searchProducts' && toolFunctions.searchProducts) {
+                result = await toolFunctions.searchProducts(args.query);
+              } else if (name === 'getProductById' && toolFunctions.getProductById) {
+                result = await toolFunctions.getProductById(args.id);
+              } else if (name === 'updateProduct' && toolFunctions.updateProduct) {
+                await toolFunctions.updateProduct(args.id, args);
                 result = { success: true, message: 'Product updated successfully' };
-              } else if (name === 'getAllProducts' && tools.getProducts) {
-                result = await tools.getProducts(args.query || '');
+              } else if (name === 'getAllProducts' && toolFunctions.getProducts) {
+                result = await toolFunctions.getProducts(args.query || '');
               }
               
               toolResults.push({ name, args, result });
               messagesWithToolResults.push({
-                role: 'tool' as const,
+                role: 'tool',
                 tool_call_id: toolCall.id,
                 content: JSON.stringify(result)
               });
@@ -452,7 +457,7 @@ Be conversational, helpful, and proactive. When user provides product details, a
               console.error(`Tool ${name} error:`, error);
               toolResults.push({ name, args, result: { error: String(error) } });
               messagesWithToolResults.push({
-                role: 'tool' as const,
+                role: 'tool',
                 tool_call_id: toolCall.id,
                 content: JSON.stringify({ error: String(error) })
               });
@@ -473,7 +478,18 @@ Be conversational, helpful, and proactive. When user provides product details, a
         // Check for homepage actions
         const lowerContent = finalContent.toLowerCase();
         let action: 'updateHero' | 'updateCategoryCard' | 'addCategoryCard' | undefined;
-        let actionData: any = {};
+        const actionData: {
+          videos?: string[];
+          heroImage?: string;
+          categoryCard?: {
+            id?: string;
+            title: string;
+            handle: string;
+            image: string;
+            description?: string;
+            order?: number;
+          };
+        } = {};
 
         if (lowerContent.includes('hero')) {
           action = 'updateHero';
@@ -498,7 +514,18 @@ Be conversational, helpful, and proactive. When user provides product details, a
       const lowerContent = content.toLowerCase();
       
       let action: 'updateHero' | 'updateCategoryCard' | 'addCategoryCard' | undefined;
-      let actionData: any = {};
+      const actionData: {
+        videos?: string[];
+        heroImage?: string;
+        categoryCard?: {
+          id?: string;
+          title: string;
+          handle: string;
+          image: string;
+          description?: string;
+          order?: number;
+        };
+      } = {};
       let extractedData: Partial<ProductData> = {};
 
       if (lowerContent.includes('hero')) {

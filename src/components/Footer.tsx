@@ -21,7 +21,7 @@ export function Footer() {
             className="lg:col-span-1"
           >
             <div className="mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-amber-600 mb-2">MONTEVELORIS</h3>
+              <h3 className="text-2xl font-bold text-[#052e16] dark:text-amber-600 mb-2">MONTEVELORIS</h3>
               <p className="text-gray-900 dark:text-amber-600 text-sm leading-relaxed">
                 Where style meets exceptional comfort. Discover the perfect blend of fashion and functionality in every step.
               </p>

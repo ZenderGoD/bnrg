@@ -28,6 +28,10 @@ import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Checkout from "./pages/Checkout";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +78,10 @@ function AppWithRoutes() {
               <Route path="/product/:handle" element={<Product />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useChatbot } from '@/contexts/ChatbotContext';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { isCustomerLoggedIn } from '@/lib/shopify';
 
 interface Message {
@@ -111,8 +111,8 @@ export function Chatbot() {
             size="lg"
             className={cn(
               "h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300",
-              "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-              "text-primary-foreground border border-primary/20",
+              "bg-[#052e16] hover:bg-[#052e16]/90",
+              "text-white border border-[#052e16]/20",
               "hover:scale-110 active:scale-95",
               "group relative overflow-hidden"
             )}
@@ -320,7 +320,7 @@ export function Chatbot() {
                                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors duration-200" />
                                   <div className="mt-1 text-xs font-medium text-foreground/80 truncate">{product.title}</div>
                                   <div className="text-xs text-primary font-semibold">
-                                    ${parseFloat(product.priceRange?.minVariantPrice?.amount || '0').toFixed(2)}
+                                    {formatCurrency(parseFloat(product.priceRange?.minVariantPrice?.amount || '0'), "INR")}
                                   </div>
                                 </div>
                               ))}

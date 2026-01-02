@@ -165,6 +165,145 @@ export const deleteCategoryCard = mutation({
   },
 });
 
+// Get featured collections
+export const getFeaturedCollections = query({
+  handler: async (ctx) => {
+    const collections = await ctx.db
+      .query("homepageContent")
+      .withIndex("by_type", (q) => q.eq("type", "featuredCollection"))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+    
+    // Sort by order
+    collections.sort((a, b) => a.order - b.order);
+    
+    return collections.map(collection => ({
+      id: collection._id,
+      title: collection.title || '',
+      subtitle: collection.subtitle || '',
+      collectionHandle: collection.collectionHandle || '',
+      productHandles: collection.productHandles || [],
+      collectionImage: collection.collectionImage || '',
+      linkUrl: collection.linkUrl || '',
+      order: collection.order,
+      isActive: collection.isActive,
+    }));
+  },
+});
+
+// Create/Update featured collection
+export const upsertFeaturedCollection = mutation({
+  args: {
+    id: v.optional(v.id("homepageContent")),
+    title: v.string(),
+    subtitle: v.optional(v.string()),
+    collectionHandle: v.string(), // Shopify collection handle
+    productHandles: v.array(v.string()), // Selected product handles
+    collectionImage: v.string(), // Image URL for the collection
+    linkUrl: v.optional(v.string()), // Link URL
+    order: v.optional(v.number()),
+    isActive: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...data } = args;
+    const now = Date.now();
+    
+    if (id) {
+      // Update existing
+      await ctx.db.patch(id, {
+        ...data,
+        updatedAt: now,
+      });
+      return id;
+    } else {
+      // Create new - get max order
+      const existing = await ctx.db
+        .query("homepageContent")
+        .withIndex("by_type", (q) => q.eq("type", "featuredCollection"))
+        .collect();
+      
+      const maxOrder = existing.length > 0
+        ? Math.max(...existing.map(c => c.order))
+        : -1;
+      
+      return await ctx.db.insert("homepageContent", {
+        type: "featuredCollection",
+        title: data.title,
+        subtitle: data.subtitle,
+        collectionHandle: data.collectionHandle,
+        productHandles: data.productHandles,
+        collectionImage: data.collectionImage,
+        linkUrl: data.linkUrl,
+        order: data.order ?? maxOrder + 1,
+        isActive: data.isActive ?? true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  },
+});
+
+// Delete featured collection
+export const deleteFeaturedCollection = mutation({
+  args: {
+    id: v.id("homepageContent"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+
+// Get hero marquee images
+export const getHeroMarquee = query({
+  handler: async (ctx) => {
+    const marquee = await ctx.db
+      .query("homepageContent")
+      .withIndex("by_type", (q) => q.eq("type", "heroMarquee"))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+    
+    return marquee || {
+      topRowImages: [],
+      bottomRowImages: [],
+    };
+  },
+});
+
+// Update hero marquee images
+export const updateHeroMarquee = mutation({
+  args: {
+    topRowImages: v.optional(v.array(v.string())),
+    bottomRowImages: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    // Get existing marquee or create new
+    let marquee = await ctx.db
+      .query("homepageContent")
+      .withIndex("by_type", (q) => q.eq("type", "heroMarquee"))
+      .first();
+    
+    const now = Date.now();
+    
+    if (marquee) {
+      await ctx.db.patch(marquee._id, {
+        ...args,
+        updatedAt: now,
+      });
+      return marquee._id;
+    } else {
+      return await ctx.db.insert("homepageContent", {
+        type: "heroMarquee",
+        topRowImages: args.topRowImages || [],
+        bottomRowImages: args.bottomRowImages || [],
+        order: 0,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  },
+});
+
 // Get all homepage content (admin)
 export const getAll = query({
   handler: async (ctx) => {

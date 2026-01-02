@@ -3,42 +3,29 @@ import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Marquee } from '@/components/ui/marquee';
-import { useState, useEffect } from 'react';
-import { getAllProducts, ShopifyProduct } from '@/lib/shopify';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 export function Hero() {
-  const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const marqueeData = useQuery(api.homepage.getHeroMarquee);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const allProducts = await getAllProducts(20);
-        setProducts(allProducts);
-      } catch (error) {
-        console.error('Failed to fetch products for hero marquee:', error);
-      }
-    };
-    fetchProducts();
-  }, []);
+  const topRowImages = marqueeData?.topRowImages || [];
+  const bottomRowImages = marqueeData?.bottomRowImages || [];
 
-  // Get product images for marquee
-  const productImages = products
-    .map(product => product.images?.edges?.[0]?.node?.url)
-    .filter(Boolean) as string[];
+  // Ensure both marquees have the same number of items for consistent speed
+  const maxItems = Math.max(topRowImages.length, bottomRowImages.length);
+  const normalizedTopImages = topRowImages.length > 0 
+    ? Array.from({ length: Math.max(maxItems, 6) }, (_, i) => topRowImages[i % topRowImages.length])
+    : [];
+  const normalizedBottomImages = bottomRowImages.length > 0
+    ? Array.from({ length: Math.max(maxItems, 6) }, (_, i) => bottomRowImages[i % bottomRowImages.length])
+    : [];
 
-  // Split images into rows for 3D marquee (10 columns: 3 left + 4 center + 3 right)
-  const totalColumns = 10;
-  const rows = Array.from({ length: totalColumns }, (_, i) => {
-    const start = Math.floor((productImages.length / totalColumns) * i);
-    const end = Math.floor((productImages.length / totalColumns) * (i + 1));
-    return productImages.slice(start, end);
-  });
-
-  const ProductImage = ({ imageUrl, index }: { imageUrl: string; index: number }) => (
-    <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-lg overflow-hidden border border-border/50">
+  const MarqueeImage = ({ imageUrl, index }: { imageUrl: string; index: number }) => (
+    <div className="flex-shrink-0 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-lg overflow-hidden border border-border/30 bg-muted/10">
       <img
         src={imageUrl}
-        alt="Product"
+        alt={`Marquee ${index}`}
         className="w-full h-full object-cover"
       />
     </div>
@@ -47,107 +34,47 @@ export function Hero() {
   return (
     <section className="relative min-h-screen overflow-x-clip overflow-y-hidden flex flex-col">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#F4F1EA] dark:bg-background" />
-
-      {/* 3D Marquee */}
-      <div className="absolute inset-0 flex items-center justify-center z-10 [perspective:300px]">
-        <div
-          className="flex flex-row items-center gap-8"
-          style={{
-            transform:
-              "translateX(-100px) translateY(0px) translateZ(-100px) rotateX(20deg) rotateY(-10deg) rotateZ(20deg)",
-          }}
-        >
-          {productImages.length > 0 ? (
-            <>
-              {/* Left 3 columns */}
-              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[0].map((imageUrl, i) => (
-                  <ProductImage key={`left1-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[1].map((imageUrl, i) => (
-                  <ProductImage key={`left2-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[2].map((imageUrl, i) => (
-                  <ProductImage key={`left3-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              {/* Center 4 columns */}
-              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[3].map((imageUrl, i) => (
-                  <ProductImage key={`center1-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[4].map((imageUrl, i) => (
-                  <ProductImage key={`center2-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[5].map((imageUrl, i) => (
-                  <ProductImage key={`center3-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[6].map((imageUrl, i) => (
-                  <ProductImage key={`center4-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              {/* Right 3 columns */}
-              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[7].map((imageUrl, i) => (
-                  <ProductImage key={`right1-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[8].map((imageUrl, i) => (
-                  <ProductImage key={`right2-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-              <Marquee reverse pauseOnHover vertical className="[--duration:20s] [--gap:3rem]" repeat={10}>
-                {rows[9].map((imageUrl, i) => (
-                  <ProductImage key={`right3-${i}`} imageUrl={imageUrl} index={i} />
-                ))}
-              </Marquee>
-            </>
-          ) : (
-            <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-lg bg-muted/20 animate-pulse" />
-          )}
-        </div>
-
-        {/* Gradient overlays */}
-        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b"></div>
-        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t"></div>
-        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r"></div>
-        <div className="from-[#F4F1EA] dark:from-background pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l"></div>
-      </div>
+      <div className="absolute inset-0 bg-[#022c22] dark:bg-black" />
 
       {/* Hero Content - Centered */}
-      <div className="flex-1 flex items-center justify-center z-10 px-4 sm:px-8">
+      <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 sm:px-8">
+        {/* Top Marquee Row */}
+        {normalizedTopImages.length > 0 && (
+          <div className="w-full mb-8">
+            <Marquee pauseOnHover className="[--duration:40s] [--gap:2rem]" repeat={3}>
+              {normalizedTopImages.map((imageUrl, i) => (
+                <MarqueeImage key={`top-${i}`} imageUrl={imageUrl} index={i} />
+              ))}
+            </Marquee>
+          </div>
+        )}
+
+        {/* Hero Text Content */}
         <motion.div
           className="text-center max-w-4xl"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-6 text-foreground leading-tight">
-            <span className="gradient-text">Step Into</span>
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-6 text-[#F4F1EA] leading-tight">
+            <span className="text-[#F4F1EA]">Elevated Comfort.</span>
             <br />
-            <span className="text-foreground">Excellence</span>
+            <span className="text-[#F4F1EA]">Timeless Design.</span>
           </h1>
           
-          <motion.p
-            className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed"
+          <motion.div
+            className="text-base sm:text-lg md:text-xl text-[#F4F1EA] mb-8 leading-relaxed space-y-3"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            Discover the world's most exclusive sneaker collection.
-          </motion.p>
+            <p>
+              Luxury footwear crafted with precision, inspired by elegance, and designed for everyday comfort.
+            </p>
+            <p>
+              At Monte Veloris, we believe true luxury is not just seen — it is felt with every step.
+            </p>
+          </motion.div>
 
           <motion.div
             className="flex flex-col gap-4 sm:flex-row sm:gap-4 justify-center"
@@ -159,7 +86,7 @@ export function Hero() {
               <Link to="/men">
                 <Button className="btn-hero group w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4">
                   Shop Men's Collection
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 text-[#052e16]" />
                 </Button>
               </Link>
             </motion.div>
@@ -167,13 +94,24 @@ export function Hero() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link to="/women">
                 <Button className="btn-ghost-premium w-full sm:w-auto text-sm sm:text-base px-6 py-3 sm:py-4">
-                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-[#052e16]" />
                   Women's Collection
                 </Button>
               </Link>
             </motion.div>
           </motion.div>
         </motion.div>
+
+        {/* Bottom Marquee Row */}
+        {normalizedBottomImages.length > 0 && (
+          <div className="w-full mt-8">
+            <Marquee reverse pauseOnHover className="[--duration:40s] [--gap:2rem]" repeat={3}>
+              {normalizedBottomImages.map((imageUrl, i) => (
+                <MarqueeImage key={`bottom-${i}`} imageUrl={imageUrl} index={i} />
+              ))}
+            </Marquee>
+          </div>
+        )}
       </div>
 
 

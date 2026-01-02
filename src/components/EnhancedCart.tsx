@@ -1,138 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Minus, Plus, Trash2, ArrowRight, CreditCard, User, Gift } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowRight, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ShimmerButton } from '@/components/magicui/shimmer-button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
 import { useCart } from '@/contexts/CartContext';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentCustomer } from '@/lib/passwordlessAuth';
-import { 
-  getCustomerCredits, 
-  CustomerCredits 
-} from '@/lib/creditSystem';
-import { 
-  createEnhancedCheckout, 
-  validateCheckout 
-} from '@/lib/checkoutIntegration';
-import { getCustomerToken } from '@/lib/shopify';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 
 export default function EnhancedCart() {
   const { cart, isLoading, updateQuantity, removeItem } = useCart();
-  const [customerCredits, setCustomerCredits] = useState<CustomerCredits>({ balance: 0, earned: 0, pendingCredits: 0 });
-  const [creditsToApply, setCreditsToApply] = useState(0);
-  const [useCredits, setUseCredits] = useState(false);
-  const [discountCode, setDiscountCode] = useState('');
-  const [appliedDiscounts, setAppliedDiscounts] = useState<string[]>([]);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Get customer info
   const customer = getCurrentCustomer();
   const isLoggedIn = !!customer;
 
-  useEffect(() => {
-    if (customer?.id) {
-      loadCustomerCredits();
-    }
-  }, [customer]);
-
-  const loadCustomerCredits = async () => {
-    const token = getCustomerToken();
-    if (!token?.accessToken) return;
-    
-    try {
-      const credits = await getCustomerCredits(token.accessToken);
-      setCustomerCredits(credits);
-    } catch (error) {
-      console.error('Error loading customer credits:', error);
-    }
-  };
-
-  const handleApplyDiscount = () => {
-    if (discountCode.trim() && !appliedDiscounts.includes(discountCode.trim())) {
-      setAppliedDiscounts(prev => [...prev, discountCode.trim()]);
-      setDiscountCode('');
-      toast({
-        title: "Discount Applied",
-        description: `Discount code "${discountCode}" will be applied at checkout.`,
-      });
-    }
-  };
-
-  const handleRemoveDiscount = (code: string) => {
-    setAppliedDiscounts(prev => prev.filter(c => c !== code));
-  };
-
-  const handleUseCreditsChange = (checked: boolean) => {
-    setUseCredits(checked);
-    if (checked && cart) {
-      const total = cart.cost.totalAmount.amount;
-      const maxCredits = Math.min(customerCredits.balance, parseFloat(total));
-      setCreditsToApply(maxCredits);
-    } else {
-      setCreditsToApply(0);
-    }
-  };
-
-  const handleCreditsAmountChange = (amount: string) => {
-    const numAmount = parseFloat(amount) || 0;
-    const total = cart ? parseFloat(cart.cost.totalAmount.amount) : 0;
-    const maxCredits = Math.min(customerCredits.balance, total);
-    setCreditsToApply(Math.min(numAmount, maxCredits));
-  };
-
   const handleCheckout = async () => {
     if (!cart) return;
-
-    try {
-      setIsCheckingOut(true);
-
-      // Validate checkout
-      const validation = await validateCheckout(
-        cart.id,
-        customer?.accessToken,
-        useCredits ? creditsToApply : 0
-      );
-
-      if (!validation.valid) {
-        toast({
-          title: "Checkout Error",
-          description: validation.errors.join(', '),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create enhanced checkout
-      const checkoutUrl = await createEnhancedCheckout({
-        cartId: cart.id,
-        customerAccessToken: customer?.accessToken,
-        creditsToApply: useCredits ? creditsToApply : 0,
-        discountCodes: appliedDiscounts
-      });
-
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        throw new Error('Failed to create checkout');
-      }
-
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast({
-        title: "Checkout Failed",
-        description: "Unable to proceed to checkout. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCheckingOut(false);
-    }
+    navigate('/checkout');
   };
 
   if (isLoading) {
@@ -179,7 +70,6 @@ export default function EnhancedCart() {
 
   const subtotal = parseFloat(cart.cost.subtotalAmount.amount);
   const total = parseFloat(cart.cost.totalAmount.amount);
-  const finalTotal = Math.max(0, total - (useCredits ? creditsToApply : 0));
 
   return (
     <div className="min-h-screen pt-20 sm:pt-24">
@@ -226,14 +116,41 @@ export default function EnhancedCart() {
                     
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base truncate">
-                        {item.merchandise?.product.title}
+                        {item.merchandise?.product.title || "Product"}
                       </h3>
                       <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                        {item.merchandise?.title}
+                        {item.merchandise?.title || "Variant"}
                       </p>
-                      <p className="text-accent font-semibold text-sm sm:text-base">
-                        {formatCurrency(item.cost.totalAmount.amount, item.cost.totalAmount.currencyCode || "INR")}
-                      </p>
+                      <div className="space-y-1">
+                        {(() => {
+                          const pricePerItem = parseFloat(item.cost.totalAmount.amount) / item.quantity;
+                          const totalMrp = item.mrp ? item.mrp * item.quantity : null;
+                          const hasDiscount = item.mrp && item.mrp > pricePerItem;
+                          
+                          return (
+                            <>
+                              {hasDiscount && totalMrp ? (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm text-muted-foreground line-through">
+                                    {formatCurrency(totalMrp, "INR")}
+                                  </p>
+                                  <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded font-semibold">
+                                    {Math.round(((item.mrp! - pricePerItem) / item.mrp!) * 100)}% OFF
+                                  </span>
+                                </div>
+                              ) : null}
+                              <p className="text-accent font-semibold text-sm sm:text-base">
+                                {formatCurrency(item.cost.totalAmount.amount, "INR")}
+                              </p>
+                              {item.quantity > 1 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {formatCurrency(pricePerItem, "INR")} per item
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end space-x-3">
@@ -283,95 +200,14 @@ export default function EnhancedCart() {
             >
               <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 sm:mb-6">Order Summary</h2>
               
-              {/* Discount Code */}
-              <div className="space-y-3 mb-4 sm:mb-6">
-                <label className="text-sm font-medium text-foreground">Discount Code</label>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <Input
-                    placeholder="Enter discount code"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleApplyDiscount()}
-                    className="text-sm"
-                  />
-                  <Button 
-                    onClick={handleApplyDiscount} 
-                    variant="outline"
-                    disabled={!discountCode.trim()}
-                    className="text-sm"
-                  >
-                    Apply
-                  </Button>
-                </div>
-                
-                {/* Applied Discounts */}
-                {appliedDiscounts.length > 0 && (
-                  <div className="space-y-2">
-                    {appliedDiscounts.map((code) => (
-                      <div key={code} className="flex items-center justify-between bg-green-50 text-green-700 px-3 py-2 rounded-lg text-xs sm:text-sm">
-                        <span>{code}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveDiscount(code)}
-                          className="h-5 w-5 p-0 text-green-600 hover:text-green-800 touch-target"
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* Credits Section */}
-              {isLoggedIn && (
-                <div className="space-y-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-accent/5 dark:from-amber-900/20 dark:to-accent/5 border border-amber-200/50 dark:border-amber-800/50 rounded-xl">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="use-credits" 
-                      checked={useCredits}
-                      onCheckedChange={handleUseCreditsChange}
-                    />
-                    <label htmlFor="use-credits" className="text-sm font-medium text-foreground flex items-center space-x-2">
-                      <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />
-                      <span>Use MONTEVELORIS Credits</span>
-                    </label>
-                  </div>
-                  
-                  <div className="text-xs sm:text-sm text-muted-foreground">Available: {formatCurrency(customerCredits.balance, cart?.cost.totalAmount.currencyCode || "INR")}</div>
-
-                  {useCredits && (
-                    <div className="space-y-2">
-                      <Input
-                        type="number"
-                        placeholder="Amount to use"
-                        value={creditsToApply}
-                        onChange={(e) => handleCreditsAmountChange(e.target.value)}
-                        max={Math.min(customerCredits.balance, total)}
-                        min={0}
-                        step={0.01}
-                        className="text-sm"
-                        disabled={customerCredits.balance <= 0}
-                      />
-                      <div className="text-xs text-muted-foreground">Max: {formatCurrency(Math.min(customerCredits.balance, total), cart?.cost.totalAmount.currencyCode || "INR")}</div>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="space-y-3 mb-4 sm:mb-6">
                 <div className="flex justify-between text-sm sm:text-base">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatCurrency(subtotal, cart.cost.subtotalAmount.currencyCode || "INR")}</span>
+                  <span className="font-medium">{formatCurrency(subtotal, "INR")}</span>
                 </div>
                 
-                {useCredits && creditsToApply > 0 && (
-                  <div className="flex justify-between text-green-600 text-sm sm:text-base">
-                    <span>MONTEVELORIS Credits Applied</span>
-                    <span>-{formatCurrency(creditsToApply, cart.cost.subtotalAmount.currencyCode || "INR")}</span>
-                  </div>
-                )}
                 
                 <div className="flex justify-between text-sm sm:text-base">
                   <span className="text-muted-foreground">Shipping</span>
@@ -386,33 +222,11 @@ export default function EnhancedCart() {
                 <div className="border-t border-border pt-3 sm:pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-base sm:text-lg font-bold">Total</span>
-                    <span className="text-lg sm:text-xl font-bold text-accent">{formatCurrency(finalTotal, cart.cost.totalAmount.currencyCode || "INR")}</span>
+                    <span className="text-lg sm:text-xl font-bold text-accent">{formatCurrency(total, "INR")}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Redeem Gift Card */}
-              <div className="space-y-3 mb-4 sm:mb-6">
-                <label className="text-sm font-medium text-foreground">Redeem Gift Card</label>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <Input
-                    placeholder="Enter gift card code"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleApplyDiscount()}
-                    className="text-sm"
-                  />
-                  <Button 
-                    onClick={handleApplyDiscount} 
-                    variant="outline"
-                    disabled={!discountCode.trim()}
-                    className="text-sm"
-                  >
-                    Redeem
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Tip: Shareable credits are gift cards. Enter a code here to redeem.</p>
-              </div>
 
                              <motion.div
                  className="mt-4 sm:mt-6"
@@ -437,29 +251,11 @@ export default function EnhancedCart() {
                  </ShimmerButton>
                </motion.div>
 
-              {!isLoggedIn && (
-                <motion.div 
-                  className="mt-4 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-accent/5 dark:from-amber-900/20 dark:to-accent/5 border border-amber-200/50 dark:border-amber-800/50 rounded-xl"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                >
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-medium text-accent">Unlock Premium Benefits</p>
-                    <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-                  </div>
-                  <p className="text-xs text-center text-muted-foreground leading-relaxed">
-                    Sign in to earn <span className="font-medium text-accent">40% back in credits</span>, 
-                    faster checkout, and exclusive rewards
-                  </p>
-                </motion.div>
-              )}
 
               {/* Security Notice */}
               <div className="mt-4 flex items-center justify-center space-x-2 text-xs text-muted-foreground">
                 <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span>Secure checkout powered by Shopify</span>
+                <span>Secure checkout</span>
               </div>
             </motion.div>
           </div>

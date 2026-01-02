@@ -110,7 +110,7 @@ export function Header() {
   return (
     <>
       <motion.header
-        className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/80 backdrop-blur-md"
+        className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-[#022c22] dark:bg-background/80 backdrop-blur-md"
         initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
@@ -123,7 +123,12 @@ export function Header() {
               whileTap={{ scale: 0.95 }}
             >
               <Link to="/" className="flex items-center space-x-2">
-                <span className="text-xl sm:text-2xl font-bold gradient-text">MONTEVELORIS</span>
+                <img 
+                  src="/monte-veloris-logo.png" 
+                  alt="MONTEVELORIS" 
+                  className="h-8 sm:h-9 object-contain"
+                />
+                <span className="text-xl sm:text-2xl font-bold text-[#d97706]">MONTEVELORIS</span>
               </Link>
             </motion.div>
 
@@ -144,16 +149,16 @@ export function Header() {
                 >
                   <Link
                     to={item.href}
-                    className={`relative text-sm font-medium transition-colors hover:text-accent ${
+                    className={`relative text-sm font-medium transition-colors hover:text-[#F4F1EA]/80 dark:hover:text-accent ${
                       isActive(item.href) 
-                        ? 'text-accent' 
-                        : 'text-muted-foreground'
+                        ? 'text-[#F4F1EA] dark:text-accent' 
+                        : 'text-[#F4F1EA]/80 dark:text-muted-foreground'
                     }`}
                   >
                     {item.name}
                     {isActive(item.href) && (
                       <motion.div
-                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent rounded-full"
+                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#d97706] dark:bg-accent rounded-full"
                         layoutId="activeIndicator"
                         initial={false}
                         transition={{ duration: 0.3 }}
@@ -190,7 +195,7 @@ export function Header() {
                 onClick={() => setIsSearchOpen(true)}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <Search className="h-5 w-5" />
+                <Search className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
               </motion.button>
 
               {/* Theme Toggle */}
@@ -208,7 +213,7 @@ export function Header() {
                 onClick={() => window.location.href = '/profile'}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <User className="h-5 w-5" />
+                <User className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
               </motion.button>
 
               {/* Cart */}
@@ -218,7 +223,7 @@ export function Header() {
                 onClick={() => window.location.href = '/cart'}
                 className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <ShoppingBag className="h-5 w-5" />
+                <ShoppingBag className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
                 {totalItems > 0 && (
                   <motion.div
                     className="absolute -top-1 -right-1 h-5 w-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium"
@@ -242,7 +247,7 @@ export function Header() {
                 onClick={() => setIsSearchOpen(true)}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <Search className="h-5 w-5" />
+                <Search className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
               </motion.button>
 
               {/* Cart */}
@@ -252,7 +257,7 @@ export function Header() {
                 onClick={() => window.location.href = '/cart'}
                 className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <ShoppingBag className="h-5 w-5" />
+                <ShoppingBag className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
                 {totalItems > 0 && (
                   <motion.div
                     className="absolute -top-1 -right-1 h-5 w-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium"
@@ -272,7 +277,7 @@ export function Header() {
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
               </motion.button>
 
             </div>
@@ -375,7 +380,7 @@ export function Header() {
                     }}
                     className="flex items-center w-full px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <Search className="h-5 w-5 mr-3" />
+                    <Search className="h-5 w-5 mr-3 text-[#F4F1EA] dark:text-foreground" />
                     Search
                   </button>
                   
@@ -406,7 +411,7 @@ export function Header() {
                     }}
                     className="flex items-center w-full px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <ShoppingBag className="h-5 w-5 mr-3" />
+                    <ShoppingBag className="h-5 w-5 mr-3 text-[#F4F1EA] dark:text-foreground" />
                     Cart ({totalItems})
                   </button>
                 </div>
@@ -437,7 +442,7 @@ export function Header() {
         {showScrollToTop && (
           <motion.button
             onClick={scrollToTop}
-            className="fixed bottom-6 right-24 z-50 p-3 bg-accent text-accent-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+            className="fixed bottom-6 right-24 z-50 p-3 bg-[#052e16] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
             initial={{ opacity: 0, scale: 0, x: 20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0, x: 20 }}

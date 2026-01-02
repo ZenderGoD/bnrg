@@ -15,6 +15,7 @@ export interface Product {
   description: string;
   handle: string;
   price: number;
+  mrp?: number;
   currencyCode: string;
   images: Array<{
     url: string;
@@ -166,6 +167,12 @@ export const users = {
     phone?: string;
     acceptsMarketing?: boolean;
     role?: "customer" | "admin" | "manager";
+    address?: string;
+    apartment?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    pinCode?: string;
   }) => {
     try {
       return convex.mutation(api.users.update, {
@@ -338,6 +345,17 @@ export const credits = {
       userId: userId as Id<"users">,
       code,
     });
+  },
+};
+
+// Payments API
+export const payments = {
+  getPendingByUserId: (userId: string) => {
+    return convex.query(api.payments.getPendingByUserId, { userId: userId as Id<"users"> });
+  },
+  
+  getByOrderId: (orderId: string) => {
+    return convex.query(api.payments.getByOrderId, { orderId: orderId as Id<"orders"> });
   },
 };
 

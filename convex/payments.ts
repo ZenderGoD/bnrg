@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 // Create payment record
 export const create = mutation({
@@ -28,38 +29,12 @@ export const create = mutation({
       amountPaid: 0,
       status: "pending",
       paymentMethod: "UPI",
+      paymentInitiatedAt: undefined, // Will be set when user clicks "Proceed to Payment"
       createdAt: now,
       updatedAt: now,
     });
 
-    // Send Discord notification
-    const webhookUrl = process.env.DISCORD_WEBHOOK_SYSTEM || "";
-    if (webhookUrl) {
-      try {
-        const order = await ctx.db.get(args.orderId);
-        const user = await ctx.db.get(args.userId);
-        
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            embeds: [{
-              title: "💰 New Payment Pending",
-              description: `A new payment has been initiated`,
-              fields: [
-                { name: "Order Number", value: `#${order?.orderNumber || "N/A"}`, inline: true },
-                { name: "Customer", value: user?.email || "Unknown", inline: true },
-                { name: "Amount", value: `₹${args.amount.toFixed(2)}`, inline: true },
-              ],
-              color: 0xffa500, // Orange
-              timestamp: new Date().toISOString(),
-            }],
-          }),
-        });
-      } catch (error) {
-        console.error("Failed to send Discord notification:", error);
-      }
-    }
+    // Don't send Discord notification here - will be sent when payment is initiated
 
     return paymentId;
   },
@@ -108,8 +83,8 @@ export const updatePayment = mutation({
     await ctx.db.patch(args.paymentId, {
       amountPaid: newAmountPaid,
       status: newStatus,
-      transactionId: args.transactionId || payment.transactionId,
-      notes: args.notes || payment.notes,
+      transactionId: args.transactionId !== undefined ? args.transactionId : payment.transactionId,
+      notes: args.notes !== undefined ? args.notes : payment.notes,
       updatedAt: Date.now(),
     });
 
@@ -123,40 +98,85 @@ export const updatePayment = mutation({
     }
 
     // Send Discord notification
-    const webhookUrl = process.env.DISCORD_WEBHOOK_SYSTEM || "";
-    if (webhookUrl) {
-      try {
-        const updatedPayment = await ctx.db.get(args.paymentId);
-        const order = await ctx.db.get(payment.orderId);
-        const user = await ctx.db.get(payment.userId);
+    try {
+      const order = await ctx.db.get(payment.orderId);
+      const user = await ctx.db.get(payment.userId);
+      
+      if (order && user) {
+        const notificationType = newStatus === "paid" ? "completed" : newStatus === "partial" ? "partial" : "initiated";
         
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            embeds: [{
-              title: newStatus === "paid" ? "✅ Payment Completed" : "⚠️ Partial Payment",
-              description: newStatus === "paid" 
-                ? `Full payment received for order #${order?.orderNumber || "N/A"}`
-                : `Partial payment of ₹${newAmountPaid.toFixed(2)} received. Remaining: ₹${(payment.amount - newAmountPaid).toFixed(2)}`,
-              fields: [
-                { name: "Order Number", value: `#${order?.orderNumber || "N/A"}`, inline: true },
-                { name: "Customer", value: user?.email || "Unknown", inline: true },
-                { name: "Total Amount", value: `₹${payment.amount.toFixed(2)}`, inline: true },
-                { name: "Amount Paid", value: `₹${newAmountPaid.toFixed(2)}`, inline: true },
-                { name: "Status", value: newStatus, inline: true },
-              ],
-              color: newStatus === "paid" ? 0x00ff00 : 0xffa500,
-              timestamp: new Date().toISOString(),
-            }],
-          }),
+        await ctx.scheduler.runAfter(0, internal.discordNotifications.sendPaymentNotification, {
+          type: notificationType as "initiated" | "completed" | "partial",
+          orderNumber: order.orderNumber,
+          customerEmail: user.email,
+          amount: payment.amount,
+          amountPaid: newAmountPaid,
+          paymentMethod: payment.paymentMethod,
+          status: newStatus,
         });
-      } catch (error) {
-        console.error("Failed to send Discord notification:", error);
       }
+    } catch (error) {
+      console.error("❌ Failed to send Discord notification:", error);
     }
 
     return { success: true, status: newStatus };
+  },
+});
+
+// Initiate payment (when user clicks "Proceed to Payment")
+export const initiatePayment = mutation({
+  args: {
+    paymentId: v.id("payments"),
+  },
+  handler: async (ctx, args) => {
+    const payment = await ctx.db.get(args.paymentId);
+    if (!payment) throw new Error("Payment not found");
+    
+    if (payment.paymentInitiatedAt) {
+      // Already initiated, return existing timestamp
+      return payment.paymentInitiatedAt;
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(args.paymentId, {
+      paymentInitiatedAt: now,
+      updatedAt: now,
+    });
+
+    // Send Discord notification when payment is initiated
+    try {
+      const order = await ctx.db.get(payment.orderId);
+      const user = await ctx.db.get(payment.userId);
+      
+      if (order && user) {
+        await ctx.scheduler.runAfter(0, internal.discordNotifications.sendPaymentNotification, {
+          type: "initiated",
+          orderNumber: order.orderNumber,
+          customerEmail: user.email,
+          amount: payment.amount,
+          amountPaid: payment.amountPaid,
+          paymentMethod: payment.paymentMethod,
+          status: payment.status,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Failed to send Discord notification:", error);
+    }
+
+    return now;
+  },
+});
+
+// Get pending payments by user ID
+export const getPendingByUserId = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const payments = await ctx.db
+      .query("payments")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    
+    return payments.filter((p) => p.status === "pending" || p.status === "partial");
   },
 });
 

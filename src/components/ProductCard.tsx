@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShopifyProduct, isCustomerLoggedIn, getCustomerToken } from '@/lib/shopify';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/contexts/CartContext';
+import { formatCurrency } from '@/lib/utils';
 
 interface ProductCardProps {
   product: ShopifyProduct;
@@ -214,7 +215,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             <div className="flex items-center justify-between pt-2">
               <div className="space-y-1">
                 <p className="text-base sm:text-lg font-bold text-foreground">
-                  {currency === 'USD' ? '$' : currency} {price.toFixed(2)}
+                  {formatCurrency(price, "INR")}
                 </p>
               </div>
 

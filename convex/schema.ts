@@ -8,6 +8,7 @@ export default defineSchema({
     description: v.string(),
     handle: v.string(),
     price: v.number(),
+    mrp: v.optional(v.number()), // Maximum Retail Price for discount calculation
     currencyCode: v.string(),
     images: v.array(v.object({
       url: v.string(),
@@ -31,6 +32,7 @@ export default defineSchema({
     tags: v.array(v.string()),
     collection: v.string(), // "mens-collection" or "womens-collection"
     category: v.optional(v.string()), // "premium-lifestyle", "athletic-performance", etc.
+    archived: v.optional(v.boolean()), // If true, product is archived (hidden from public but kept in database)
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -51,6 +53,13 @@ export default defineSchema({
     creditsBalance: v.number(), // MONTEVELORIS credits balance
     creditsEarned: v.number(), // Total credits earned
     creditsPending: v.number(), // Pending credits
+    // Address fields
+    address: v.optional(v.string()),
+    apartment: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    country: v.optional(v.string()),
+    pinCode: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -116,7 +125,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_order", ["orderId"]),
 
-  // Gift cards / Shareable coupons
+  // Gift cards / Shareable coupons (for credits system)
   giftCards: defineTable({
     code: v.string(),
     amount: v.number(),
@@ -129,6 +138,39 @@ export default defineSchema({
   })
     .index("by_code", ["code"])
     .index("by_creator", ["createdBy"]),
+
+  // Admin-created gift cards (for checkout)
+  adminGiftCards: defineTable({
+    code: v.string(),
+    amount: v.number(), // Fixed amount value
+    isActive: v.boolean(),
+    expiresAt: v.optional(v.number()), // Optional expiration
+    usageLimit: v.optional(v.number()), // Optional usage limit (how many times it can be used)
+    usageCount: v.number(), // How many times it's been used
+    minPurchaseAmount: v.optional(v.number()), // Optional minimum purchase amount
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_active", ["isActive"]),
+
+  // Coupon codes (for checkout discounts)
+  couponCodes: defineTable({
+    code: v.string(),
+    discountType: v.union(v.literal("percentage"), v.literal("fixed")), // Percentage or fixed amount
+    discountValue: v.number(), // Percentage (0-100) or fixed amount
+    isActive: v.boolean(),
+    expiresAt: v.optional(v.number()), // Optional expiration
+    usageLimit: v.optional(v.number()), // Optional usage limit
+    usageCount: v.number(), // How many times it's been used
+    minPurchaseAmount: v.optional(v.number()), // Optional minimum purchase amount
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_active", ["isActive"]),
 
   // Filter settings (brands, categories, etc.)
   filterSettings: defineTable({
@@ -154,16 +196,27 @@ export default defineSchema({
   homepageContent: defineTable({
     type: v.union(
       v.literal("hero"),
-      v.literal("categoryCard")
+      v.literal("categoryCard"),
+      v.literal("featuredCollection"),
+      v.literal("heroMarquee")
     ),
     // For hero: videos and images
     videos: v.optional(v.array(v.string())), // Video URLs
     heroImage: v.optional(v.string()), // Fallback hero image URL
+    // For hero marquee: top and bottom row images
+    topRowImages: v.optional(v.array(v.string())), // Image URLs for top marquee row
+    bottomRowImages: v.optional(v.array(v.string())), // Image URLs for bottom marquee row
     // For category cards
     title: v.optional(v.string()),
     handle: v.optional(v.string()), // URL handle for navigation
     image: v.optional(v.string()), // Category card image URL
     description: v.optional(v.string()),
+    // For featured collections
+    collectionHandle: v.optional(v.string()), // Shopify collection handle
+    productHandles: v.optional(v.array(v.string())), // Selected product handles to display
+    collectionImage: v.optional(v.string()), // Image representing the collection
+    subtitle: v.optional(v.string()), // Subtitle/description for the collection
+    linkUrl: v.optional(v.string()), // Link URL (e.g., /men, /women, /catalog?collection=...)
     order: v.number(), // For sorting
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -212,6 +265,7 @@ export default defineSchema({
     paymentMethod: v.string(), // "UPI", "Bank Transfer", etc.
     transactionId: v.optional(v.string()), // UPI transaction ID or reference
     notes: v.optional(v.string()), // Admin notes
+    paymentInitiatedAt: v.optional(v.number()), // When payment QR was shown (for timer)
     createdAt: v.number(),
     updatedAt: v.number(),
   })

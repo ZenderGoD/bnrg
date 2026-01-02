@@ -15,6 +15,7 @@ export interface ShopifyProduct {
   title: string;
   description: string;
   handle: string;
+  mrp?: number;
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -40,6 +41,10 @@ export interface ShopifyProduct {
           currencyCode: string;
         };
         availableForSale: boolean;
+        image?: {
+          url: string;
+          altText?: string;
+        };
       };
     }>;
   };
@@ -67,6 +72,7 @@ export interface CartLine {
       currencyCode: string;
     };
   };
+  mrp?: number; // Maximum Retail Price for discount display
 }
 
 export interface Cart {
@@ -151,6 +157,15 @@ function saveCart(cart: Cart) {
 }
 
 function recalcCart(cart: Cart): Cart {
+  if (cart.lines.edges.length === 0) {
+    cart.cost.subtotalAmount.amount = "0.00";
+    cart.cost.totalAmount.amount = "0.00";
+    cart.cost.subtotalAmount.currencyCode = "INR";
+    cart.cost.totalAmount.currencyCode = "INR";
+    return cart;
+  }
+
+  // Always use INR for currency
   const subtotal = cart.lines.edges.reduce((sum, edge) => {
     const line = edge.node;
     const lineTotal = parseFloat(line.cost.totalAmount.amount);
@@ -158,7 +173,9 @@ function recalcCart(cart: Cart): Cart {
   }, 0);
 
   cart.cost.subtotalAmount.amount = subtotal.toFixed(2);
+  cart.cost.subtotalAmount.currencyCode = "INR";
   cart.cost.totalAmount.amount = subtotal.toFixed(2);
+  cart.cost.totalAmount.currencyCode = "INR";
   return cart;
 }
 
@@ -187,13 +204,43 @@ export async function getCart(cartId: string): Promise<Cart> {
   return cart;
 }
 
+// Helper to find product by variantId
+async function findProductByVariantId(variantId: string): Promise<{ product: ShopifyProduct; variant: any } | null> {
+  try {
+    // Get all products and find the one containing this variant
+    const products = await getAllProducts(100);
+    for (const product of products) {
+      const variant = product.variants.edges.find(edge => edge.node.id === variantId);
+      if (variant) {
+        return { product, variant: variant.node };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error finding product by variantId:', error);
+    return null;
+  }
+}
+
 export async function addToCart(
   cartId: string,
   variantId: string,
   quantity = 1,
 ): Promise<Cart> {
   const cart = (await getCart(cartId)) as Cart;
-  const price = 100; // simple placeholder
+  
+  // Find product and variant data
+  const productData = await findProductByVariantId(variantId);
+  if (!productData) {
+    throw new Error(`Product not found for variant ${variantId}`);
+  }
+  
+  const { product, variant } = productData;
+  const price = parseFloat(variant.price.amount);
+  const currencyCode = "INR"; // Always use INR
+  const productImage = product.images.edges[0]?.node;
+  const variantImage = variant.image;
+  const mrp = product.mrp; // Get MRP from product
 
   const existingEdge = cart.lines.edges.find(
     (edge) => edge.node.merchandise.id === variantId,
@@ -204,18 +251,29 @@ export async function addToCart(
     existingEdge.node.cost.totalAmount.amount = (
       existingEdge.node.quantity * price
     ).toFixed(2);
+    existingEdge.node.cost.totalAmount.currencyCode = "INR";
+    // Update MRP if available
+    if (mrp !== undefined) {
+      existingEdge.node.mrp = mrp;
+    }
   } else {
     const line: CartLine = {
       id: `line-${Date.now()}`,
       quantity,
       merchandise: {
         id: variantId,
-        title: "Variant",
+        title: variant.title,
         product: {
-          title: "Product",
-          handle: "product",
+          title: product.title,
+          handle: product.handle,
         },
-        image: undefined,
+        image: variantImage ? {
+          url: variantImage.url,
+          altText: variantImage.altText || product.title,
+        } : productImage ? {
+          url: productImage.url,
+          altText: productImage.altText || product.title,
+        } : undefined,
       },
       cost: {
         totalAmount: {
@@ -223,6 +281,7 @@ export async function addToCart(
           currencyCode: "INR",
         },
       },
+      mrp: mrp, // Include MRP in cart line
     };
     cart.lines.edges.push({ node: line });
   }
@@ -238,7 +297,6 @@ export async function updateCartLine(
   quantity: number,
 ): Promise<Cart> {
   const cart = (await getCart(cartId)) as Cart;
-  const price = 100;
 
   const edge = cart.lines.edges.find((e) => e.node.id === lineId);
   if (!edge) return cart;
@@ -246,8 +304,10 @@ export async function updateCartLine(
   if (quantity <= 0) {
     cart.lines.edges = cart.lines.edges.filter((e) => e.node.id !== lineId);
   } else {
+    // Get price per item from existing cost
+    const pricePerItem = parseFloat(edge.node.cost.totalAmount.amount) / edge.node.quantity;
     edge.node.quantity = quantity;
-    edge.node.cost.totalAmount.amount = (quantity * price).toFixed(2);
+    edge.node.cost.totalAmount.amount = (quantity * pricePerItem).toFixed(2);
   }
 
   const updated = recalcCart(cart);
@@ -271,10 +331,11 @@ function mapConvexProduct(p: Product): ShopifyProduct {
     title: p.title,
     description: p.description,
     handle: p.handle,
+    mrp: p.mrp, // Add MRP if available
     priceRange: {
       minVariantPrice: {
         amount: p.price.toFixed(2),
-        currencyCode: p.currencyCode || "USD",
+        currencyCode: p.currencyCode || "INR",
       },
     },
     images: {
@@ -293,9 +354,10 @@ function mapConvexProduct(p: Product): ShopifyProduct {
           title: v.title,
           price: {
             amount: v.price.toFixed(2),
-            currencyCode: p.currencyCode || "USD",
+            currencyCode: p.currencyCode || "INR",
           },
           availableForSale: v.availableForSale,
+          image: v.image,
         },
       })),
     },
@@ -412,7 +474,7 @@ export async function getCustomerOrders(
       orderNumber: o.orderNumber,
       totalPrice: {
         amount: o.totalPrice.toFixed(2),
-        currencyCode: o.currencyCode || "USD",
+        currencyCode: o.currencyCode || "INR",
       },
       processedAt: new Date(o.createdAt || Date.now()).toISOString(),
       fulfillmentStatus: o.fulfillmentStatus || "unfulfilled",

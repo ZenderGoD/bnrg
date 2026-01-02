@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, rgba } from 'framer-motion';
 import { ProductCard } from './ProductCard';
 import { ProductGridSkeleton } from './SkeletonLoader';
 import { ShopifyProduct } from '@/lib/shopify';
@@ -18,7 +18,7 @@ interface ProductGridProps {
 export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, hasMore = true, isLoadingMore = false, showLoadMore = true }: ProductGridProps) {
   if (isLoading) {
     return (
-      <section className="py-12 bg-[#F4F1EA] dark:bg-black">
+      <section className="py-12">
         {title && (
           <div className="text-center mb-12">
             <div className="skeleton h-8 w-64 mx-auto mb-4 rounded" />
@@ -32,7 +32,7 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
 
   if (!products.length) {
     return (
-      <section className="py-12 bg-[#F4F1EA] dark:bg-black">
+      <section className="py-12">
         <div className="text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -50,7 +50,7 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
   }
 
   return (
-    <section className="py-12 bg-[#F4F1EA] dark:bg-black">
+    <section className="py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         {title && (
           <motion.div
@@ -71,7 +71,7 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
         )}
 
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}

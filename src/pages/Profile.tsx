@@ -5,8 +5,13 @@ import { User, Heart, ShoppingBag, Clock, LogOut, Settings, CreditCard, Calendar
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SimpleLoginModal } from '@/components/SimpleLoginModal';
-import { auth, users, orders, credits, products, type User as UserType, type Order, type Product } from '@/lib/api';
+import { auth, users, orders, credits, products, payments, type User as UserType, type Order, type Product } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
   const [user, setUser] = useState<UserType | null>(null);
@@ -17,6 +22,24 @@ const Profile = () => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userCredits, setUserCredits] = useState(0);
+  const [hasPendingPayments, setHasPendingPayments] = useState(false);
+  const { toast } = useToast();
+  
+  // Personal information form state
+  const [formData, setFormData] = useState({
+    email: '',
+    acceptsMarketing: false,
+    firstName: '',
+    lastName: '',
+    address: '',
+    apartment: '',
+    city: '',
+    state: '',
+    country: 'India',
+    pinCode: '',
+    phone: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -47,6 +70,21 @@ const Profile = () => {
             setUser(userData);
             console.log('✅ Profile: User state set:', userData.email);
             
+            // Populate form data
+            setFormData({
+              email: userData.email || '',
+              acceptsMarketing: userData.acceptsMarketing || false,
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              address: (userData as any).address || '',
+              apartment: (userData as any).apartment || '',
+              city: (userData as any).city || '',
+              state: (userData as any).state || '',
+              country: (userData as any).country || 'India',
+              pinCode: (userData as any).pinCode || '',
+              phone: userData.phone || '',
+            });
+            
             // Load user orders
             console.log('📦 Profile: Loading orders...');
             const userOrdersData = await orders.getByUserId(userId);
@@ -62,6 +100,17 @@ const Profile = () => {
             } catch (creditError) {
               console.error('❌ Profile: Error loading credits:', creditError);
               setUserCredits(0);
+            }
+            
+            // Check for pending payments
+            console.log('💳 Profile: Checking pending payments...');
+            try {
+              const pendingPayments = await payments.getPendingByUserId(userId);
+              console.log('💳 Profile: Pending payments:', pendingPayments.length);
+              setHasPendingPayments(pendingPayments.length > 0);
+            } catch (paymentError) {
+              console.error('❌ Profile: Error loading pending payments:', paymentError);
+              setHasPendingPayments(false);
             }
           } else {
             console.warn('⚠️ Profile: No user data returned');
@@ -142,6 +191,43 @@ const Profile = () => {
     localStorage.removeItem(likedKey);
     setLikedProducts([]);
     setLikedProductsDetails([]);
+  };
+
+  const handleSavePersonalInfo = async () => {
+    if (!user?._id) return;
+    
+    setIsSaving(true);
+    try {
+      await users.update(user._id, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        acceptsMarketing: formData.acceptsMarketing,
+        address: formData.address,
+        apartment: formData.apartment,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        pinCode: formData.pinCode,
+      });
+      
+      toast({
+        title: "Success",
+        description: "Personal information updated successfully",
+      });
+      
+      // Reload user data
+      await loadUserData();
+    } catch (error) {
+      console.error('Error saving personal info:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update personal information",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   console.log('🎯 Profile: Render check - isLoading:', isLoading, 'user:', user ? 'exists' : 'null', 'loggedIn:', auth.isLoggedIn());
@@ -398,27 +484,39 @@ const Profile = () => {
           </div>
 
           <Tabs defaultValue="orders" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-14 bg-gradient-to-r from-accent/5 via-primary/5 to-accent/5 border border-accent/10 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-4 h-14 bg-gradient-to-r from-accent/5 via-primary/5 to-accent/5 border border-accent/10 rounded-xl p-1">
               <TabsTrigger 
                 value="orders" 
-                className="h-full rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                className={`h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 relative ${
+                  hasPendingPayments ? 'ring-2 ring-orange-500 ring-offset-2' : ''
+                }`}
               >
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 Orders
+                {hasPendingPayments && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-orange-500 rounded-full animate-pulse" />
+                )}
               </TabsTrigger>
               <TabsTrigger 
                 value="liked" 
-                className="h-full rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                className="h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
               >
                 <Heart className="h-4 w-4 mr-2" />
                 Liked Products
               </TabsTrigger>
               <TabsTrigger 
                 value="history" 
-                className="h-full rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                className="h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Search History
+              </TabsTrigger>
+              <TabsTrigger 
+                value="personal" 
+                className="h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Personal Info
               </TabsTrigger>
             </TabsList>
 
@@ -530,6 +628,182 @@ const Profile = () => {
                       <p className="text-sm">Your searches will appear here</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="personal" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Contact</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="acceptsMarketing"
+                        checked={formData.acceptsMarketing}
+                        onCheckedChange={(checked) => 
+                          setFormData({ ...formData, acceptsMarketing: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="acceptsMarketing" className="cursor-pointer">
+                        Email me with news and offers
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Delivery</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Select
+                        value={formData.country}
+                        onValueChange={(value) => setFormData({ ...formData, country: value })}
+                      >
+                        <SelectTrigger id="country">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="India">India</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First name (optional)</Label>
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last name</Label>
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="apartment">Apartment, suite, etc. (optional)</Label>
+                      <Input
+                        id="apartment"
+                        value={formData.apartment}
+                        onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State</Label>
+                      <Select
+                        value={formData.state}
+                        onValueChange={(value) => setFormData({ ...formData, state: value })}
+                      >
+                        <SelectTrigger id="state">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem>
+                          <SelectItem value="Karnataka">Karnataka</SelectItem>
+                          <SelectItem value="Maharashtra">Maharashtra</SelectItem>
+                          <SelectItem value="Delhi">Delhi</SelectItem>
+                          <SelectItem value="West Bengal">West Bengal</SelectItem>
+                          <SelectItem value="Gujarat">Gujarat</SelectItem>
+                          <SelectItem value="Rajasthan">Rajasthan</SelectItem>
+                          <SelectItem value="Uttar Pradesh">Uttar Pradesh</SelectItem>
+                          <SelectItem value="Punjab">Punjab</SelectItem>
+                          <SelectItem value="Haryana">Haryana</SelectItem>
+                          <SelectItem value="Kerala">Kerala</SelectItem>
+                          <SelectItem value="Andhra Pradesh">Andhra Pradesh</SelectItem>
+                          <SelectItem value="Telangana">Telangana</SelectItem>
+                          <SelectItem value="Bihar">Bihar</SelectItem>
+                          <SelectItem value="Madhya Pradesh">Madhya Pradesh</SelectItem>
+                          <SelectItem value="Odisha">Odisha</SelectItem>
+                          <SelectItem value="Assam">Assam</SelectItem>
+                          <SelectItem value="Jharkhand">Jharkhand</SelectItem>
+                          <SelectItem value="Chhattisgarh">Chhattisgarh</SelectItem>
+                          <SelectItem value="Himachal Pradesh">Himachal Pradesh</SelectItem>
+                          <SelectItem value="Uttarakhand">Uttarakhand</SelectItem>
+                          <SelectItem value="Goa">Goa</SelectItem>
+                          <SelectItem value="Tripura">Tripura</SelectItem>
+                          <SelectItem value="Manipur">Manipur</SelectItem>
+                          <SelectItem value="Meghalaya">Meghalaya</SelectItem>
+                          <SelectItem value="Mizoram">Mizoram</SelectItem>
+                          <SelectItem value="Nagaland">Nagaland</SelectItem>
+                          <SelectItem value="Arunachal Pradesh">Arunachal Pradesh</SelectItem>
+                          <SelectItem value="Sikkim">Sikkim</SelectItem>
+                          <SelectItem value="Jammu and Kashmir">Jammu and Kashmir</SelectItem>
+                          <SelectItem value="Ladakh">Ladakh</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pinCode">PIN code</Label>
+                      <Input
+                        id="pinCode"
+                        value={formData.pinCode}
+                        onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={handleSavePersonalInfo}
+                      disabled={isSaving}
+                      className="min-w-[120px]"
+                    >
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

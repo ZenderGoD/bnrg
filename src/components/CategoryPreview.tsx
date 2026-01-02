@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProductsByCollection, ShopifyProduct } from '@/lib/shopify';
+import { formatCurrency } from '@/lib/utils';
 
 interface CategoryPreviewProps {
   category: 'men' | 'women';
@@ -72,7 +73,7 @@ export function CategoryPreview({ category, isVisible }: CategoryPreviewProps) {
                     {product.title}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    ${product.priceRange.minVariantPrice.amount}
+                    {formatCurrency(parseFloat(product.priceRange.minVariantPrice.amount), "INR")}
                   </p>
                 </motion.div>
               ))}

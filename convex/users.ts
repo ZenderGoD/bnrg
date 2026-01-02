@@ -78,6 +78,12 @@ export const update = mutation({
     phone: v.optional(v.string()),
     acceptsMarketing: v.optional(v.boolean()),
     role: v.optional(v.union(v.literal("customer"), v.literal("admin"), v.literal("manager"))),
+    address: v.optional(v.string()),
+    apartment: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    country: v.optional(v.string()),
+    pinCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
@@ -160,6 +166,74 @@ export const getAll = query({
       const { passwordHash, ...userWithoutPassword } = user;
       return userWithoutPassword;
     });
+  },
+});
+
+// Create or get guest user (for guest checkout)
+export const createOrGetGuestUser = mutation({
+  args: {
+    email: v.string(),
+    firstName: v.string(),
+    lastName: v.string(),
+    phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    apartment: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    country: v.optional(v.string()),
+    pinCode: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Check if user already exists
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+    
+    if (existing) {
+      // Update address info if provided
+      if (args.address || args.city || args.state || args.pinCode) {
+        await ctx.db.patch(existing._id, {
+          address: args.address || existing.address,
+          apartment: args.apartment || existing.apartment,
+          city: args.city || existing.city,
+          state: args.state || existing.state,
+          country: args.country || existing.country,
+          pinCode: args.pinCode || existing.pinCode,
+          phone: args.phone || existing.phone,
+          updatedAt: Date.now(),
+        });
+      }
+      return existing._id;
+    }
+    
+    // Create new guest user (with placeholder password hash)
+    const now = Date.now();
+    const firstName = args.firstName || "Guest";
+    const lastName = args.lastName || "User";
+    const userId = await ctx.db.insert("users", {
+      email: args.email,
+      passwordHash: "GUEST_USER_NO_PASSWORD", // Placeholder - user can set password later
+      firstName,
+      lastName,
+      displayName: `${firstName} ${lastName}`,
+      phone: args.phone,
+      acceptsMarketing: false,
+      role: "customer",
+      creditsBalance: 0,
+      creditsEarned: 0,
+      creditsPending: 0,
+      address: args.address,
+      apartment: args.apartment,
+      city: args.city,
+      state: args.state,
+      country: args.country || "India",
+      pinCode: args.pinCode,
+      createdAt: now,
+      updatedAt: now,
+    });
+    
+    return userId;
   },
 });
 
