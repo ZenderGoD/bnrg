@@ -17,6 +17,9 @@ export const cleanupInvalidUsers = mutation({
         user.displayName !== undefined &&
         user.passwordHash !== undefined &&
         user.acceptsMarketing !== undefined &&
+        user.creditsBalance !== undefined &&
+        user.creditsEarned !== undefined &&
+        user.creditsPending !== undefined &&
         user.createdAt !== undefined &&
         user.updatedAt !== undefined;
       

@@ -54,6 +54,9 @@ export const register = mutation({
       lastName: args.lastName,
       displayName: `${args.firstName} ${args.lastName}`,
       acceptsMarketing: args.acceptsMarketing,
+      creditsBalance: 0,
+      creditsEarned: 0,
+      creditsPending: 0,
       createdAt: now,
       updatedAt: now,
     });

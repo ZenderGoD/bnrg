@@ -51,7 +51,7 @@ class OpenAIService {
         dangerouslyAllowBrowser: true, // Required for browser usage with OpenRouter
         defaultHeaders: {
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'TOESPRING Shopping Assistant',
+          'X-Title': 'MONTEVELORIS Shopping Assistant',
         },
       });
     }
@@ -100,8 +100,11 @@ class OpenAIService {
                       'navigate_catalog',
                       'navigate_men',
                       'navigate_women',
+                      'view_cart',
+                      'add_to_cart',
                       'check_order',
                       'account_info',
+                      'credits_info',
                       'greeting',
                       'get_help',
                       'contact_support',
@@ -206,16 +209,16 @@ class OpenAIService {
   }
 
   private createSystemPrompt(): string {
-    return `You are a helpful shopping assistant for TOESPRING, a premium footwear store. Your role is to:
+    return `You are a helpful shopping assistant for MONTEVELORIS, a premium footwear store. Your role is to:
 
 1. Help customers find products they're looking for
 2. Provide information about footwear, sizing, and availability
 3. Navigate users to the right sections of the store
-4. Assist with orders and account questions
+4. Assist with orders, cart management, and account questions
 5. Be friendly, knowledgeable, and concise
 
 Store Information:
-- TOESPRING specializes in premium footwear for men and women
+- MONTEVELORIS specializes in premium footwear for men and women
 - Categories: Athletic/Sports, Lifestyle/Casual, Limited Edition, Retro/Classics
 - Brands: Nike, Adidas, Jordan, Puma, Reebok, Converse, Vans, and more
 - Price ranges: Budget-friendly to premium ($50-$300+)
@@ -232,6 +235,7 @@ Guidelines:
 Examples:
 - "Show me red Nike footwear" → intent: search_products, searchTerms: ["red", "nike"], productRequest: {color: "red", brand: "nike"}
 - "Take me to men's section" → intent: navigate_men
+- "What's in my cart?" → intent: view_cart
 - "Hi there!" → intent: greeting`;
   }
 
@@ -248,7 +252,7 @@ Examples:
     // Simple keyword matching as fallback
     if (lowerMessage.includes('hi') || lowerMessage.includes('hello')) {
       return {
-        message: "Hey there! 👋 Welcome to TOESPRING! I'm your AI shopping assistant and I'm here to help you find the perfect footwear. What can I help you with today?",
+        message: "Hey there! 👋 Welcome to MONTEVELORIS! I'm your AI shopping assistant and I'm here to help you find the perfect footwear. What can I help you with today?",
         intent: 'greeting',
         confidence: 0.8
       };
@@ -256,18 +260,16 @@ Examples:
     
     if (lowerMessage.includes('help')) {
       return {
-        message: "I'm here to help! I can assist you with:\n\n🔍 **Product Discovery** - Find footwear by brand, color, style\n📏 **Size & Fit** - Sizing guides and recommendations\n\n\n📱 **Account** - Login, profile, and account management\n\nIf I can't solve your issue, I'll connect you with our Shopify customer support team!",
+        message: "I'm here to help! I can assist you with:\n\n🔍 **Product Discovery** - Find footwear by brand, color, style\n📏 **Size & Fit** - Sizing guides and recommendations\n🛒 **Shopping** - Cart management and checkout help\n💳 **Credits** - MONTEVELORIS rewards and credit system\n📱 **Account** - Login, profile, and account management\n\nIf I can't solve your issue, I'll connect you with our Shopify customer support team!",
         intent: 'get_help',
         confidence: 0.8
       };
     }
     
-    // Cart system removed
-    // eslint-disable-next-line no-constant-condition
-    if (false) {
+    if (lowerMessage.includes('cart')) {
       return {
-        message: "Cart system has been removed.",
-        intent: 'get_help',
+        message: "I can help you with your cart! Let me take you there.",
+        intent: 'view_cart',
         confidence: 0.7
       };
     }

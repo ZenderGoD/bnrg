@@ -7,26 +7,31 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { ChatbotProvider } from "@/contexts/ChatbotContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PreLoader } from "@/components/PreLoader";
+import { Chatbot } from "@/components/Chatbot";
 import Index from "./pages/Index";
 import Men from "./pages/Men";
 import Women from "./pages/Women";
 import Kids from "./pages/Kids";
+import Cart from "./pages/Cart";
 import Product from "./pages/Product";
 import Search from "./pages/Search";
 import Profile from "./pages/Profile";
 import Catalog from "./pages/Catalog";
 import Admin from "./pages/Admin";
+import UserChats from "./pages/UserChats";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Checkout from "./pages/Checkout";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
-import SpringMode from "./pages/SpringMode";
 
 const queryClient = new QueryClient();
 
@@ -69,18 +74,21 @@ function AppWithRoutes() {
               <Route path="/search" element={<Search />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/users/:userId/chats" element={<UserChats />} />
               <Route path="/product/:handle" element={<Product />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
-              <Route path="/spring-mode" element={<SpringMode />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           {!isAdminPage && <Footer />}
+          {!isAdminPage && <Chatbot />}
         </div>
       )}
     </AnimatePresence>
@@ -91,13 +99,17 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppWithRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ChatbotProvider>
+                <AppWithRoutes />
+              </ChatbotProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

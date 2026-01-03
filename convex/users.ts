@@ -1,7 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { internal } from "./_generated/api";
 
 // Get user by email
 export const getByEmail = query({
@@ -59,6 +58,9 @@ export const register = mutation({
       displayName: `${args.firstName} ${args.lastName}`,
       acceptsMarketing: args.acceptsMarketing,
       role: "customer", // Default role
+      creditsBalance: 0,
+      creditsEarned: 0,
+      creditsPending: 0,
       createdAt: now,
       updatedAt: now,
     });
@@ -76,8 +78,6 @@ export const update = mutation({
     phone: v.optional(v.string()),
     acceptsMarketing: v.optional(v.boolean()),
     role: v.optional(v.union(v.literal("customer"), v.literal("admin"), v.literal("manager"))),
-    isApproved: v.optional(v.boolean()),
-    authorizationRequestedAt: v.optional(v.number()),
     address: v.optional(v.string()),
     apartment: v.optional(v.string()),
     city: v.optional(v.string()),
@@ -96,8 +96,6 @@ export const update = mutation({
       phone?: string;
       acceptsMarketing?: boolean;
       role?: "customer" | "admin" | "manager";
-      isApproved?: boolean;
-      authorizationRequestedAt?: number;
       address?: string;
       apartment?: string;
       city?: string;
@@ -236,6 +234,9 @@ export const createOrGetGuestUser = mutation({
       phone: args.phone,
       acceptsMarketing: false,
       role: "customer",
+      creditsBalance: 0,
+      creditsEarned: 0,
+      creditsPending: 0,
       address: args.address,
       apartment: args.apartment,
       city: args.city,
@@ -269,32 +270,6 @@ export const migrateUserRoles = mutation({
     }
     
     return { updatedCount, message: `Updated ${updatedCount} user(s) with default role` };
-  },
-});
-
-// Request authorization (updates user and triggers Discord notification)
-export const requestAuthorization = mutation({
-  args: {
-    id: v.id("users"),
-  },
-  handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.id);
-    if (!user) throw new Error("User not found");
-    
-    // Update user with authorization request timestamp
-    await ctx.db.patch(args.id, {
-      authorizationRequestedAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-    
-    // Trigger Discord notification via internal action
-    await ctx.scheduler.runAfter(0, internal.discordNotifications.sendAuthorizationRequestNotification, {
-      userId: args.id,
-      userEmail: user.email,
-      userName: user.displayName || `${user.firstName} ${user.lastName}`,
-    });
-    
-    return { success: true };
   },
 });
 

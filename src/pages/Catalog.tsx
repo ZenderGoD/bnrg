@@ -10,12 +10,12 @@ const Catalog = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState('featured');
 
-  // Fetch all articles on mount
+  // Fetch all products on mount
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        // Fetch all articles with very high limit to get everything
+        // Fetch all products with very high limit to get everything
         const allProducts = await getAllProducts(100000);
         setProducts(allProducts);
         setFilteredProducts(allProducts);
@@ -73,8 +73,8 @@ const Catalog = () => {
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold mb-2">All Articles</h1>
-              <p className="text-muted-foreground">Discover all our articles</p>
+              <h1 className="text-4xl font-bold mb-2">Complete Catalog</h1>
+              <p className="text-muted-foreground">Discover all our premium footwear</p>
             </div>
             
             <div className="flex items-center gap-4 mt-4 lg:mt-0">
@@ -97,7 +97,7 @@ const Catalog = () => {
             products={filteredProducts}
             isLoading={isLoading}
             title=""
-            subtitle={`${filteredProducts.length} articles found`}
+            subtitle={`${filteredProducts.length} products found`}
           />
         </motion.div>
       </div>

@@ -179,7 +179,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                 )}
               </div>
 
-              {/* Featured Articles */}
+              {/* Featured Products */}
               <div className="space-y-1">
                 <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Featured</h4>
                 {isLoading ? (
@@ -233,7 +233,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                   </div>
                 ) : (
                   <div className="text-center text-muted-foreground py-8">
-                    <p className="text-sm">No articles available</p>
+                    <p className="text-sm">No products available</p>
                   </div>
                 )}
               </div>
@@ -252,7 +252,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
                     onClick={() => navigate('/catalog')}
                     className="text-xs text-primary hover:text-primary/80 font-medium"
                   >
-                    View All Articles →
+                    View All Products →
                   </motion.button>
                 </div>
               </div>

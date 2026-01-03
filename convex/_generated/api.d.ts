@@ -9,14 +9,13 @@
  */
 
 import type * as admin_cleanupInvalidUsers from "../admin/cleanupInvalidUsers.js";
-import type * as admin_clearAllTables from "../admin/clearAllTables.js";
-import type * as admin_clearDatabase from "../admin/clearDatabase.js";
 import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as betterAuth_user_metadata from "../betterAuth/user_metadata.js";
 import type * as cart from "../cart.js";
 import type * as chats from "../chats.js";
 import type * as contact from "../contact.js";
+import type * as credits from "../credits.js";
 import type * as discordNotifications from "../discordNotifications.js";
 import type * as discounts from "../discounts.js";
 import type * as files from "../files.js";
@@ -35,14 +34,13 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "admin/cleanupInvalidUsers": typeof admin_cleanupInvalidUsers;
-  "admin/clearAllTables": typeof admin_clearAllTables;
-  "admin/clearDatabase": typeof admin_clearDatabase;
   analytics: typeof analytics;
   auth: typeof auth;
   "betterAuth/user_metadata": typeof betterAuth_user_metadata;
   cart: typeof cart;
   chats: typeof chats;
   contact: typeof contact;
+  credits: typeof credits;
   discordNotifications: typeof discordNotifications;
   discounts: typeof discounts;
   files: typeof files;

@@ -14,18 +14,23 @@ export type CheckoutValidationResult = {
 };
 
 export async function validateCheckout(
+  _cartId: string,
   _customerAccessToken?: string,
+  _creditsToApply?: number,
 ): Promise<CheckoutValidationResult> {
-  // Cart system removed
+  // In a real implementation you would call Convex to verify the cart,
+  // inventory, credits, etc. For now always return valid.
   return { valid: true, errors: [] };
 }
 
 export async function createEnhancedCheckout(args: {
+  cartId: string;
   customerAccessToken?: string;
+  creditsToApply?: number;
   discountCodes?: string[];
 }): Promise<string | null> {
-  // Cart system removed
-  return null;
+  // Route to checkout page
+  return "/checkout";
 }
 
 

@@ -48,6 +48,7 @@ export function sanitizeConvexError(error: ErrorLike): string {
     'Cart not found': 'Cart not found',
     'Product not found': 'Product not found',
     'Variant not found': 'Product variant not found',
+    'Insufficient credits': 'You do not have enough credits',
     'Invalid gift card code': 'Invalid gift card code',
     'Gift card has already been used': 'This gift card has already been used',
     'Gift card has expired': 'This gift card has expired',

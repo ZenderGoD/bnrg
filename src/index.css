@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* TOESPRING Brand Colors - Footwear focused */
+    /* MONTEVELORIS Brand Colors - Footwear focused */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
 
@@ -18,16 +18,16 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Cyan primary */
-    --primary: 188 94% 43%;
+    /* Amber primary */
+    --primary: 43 96% 56%;
     --primary-foreground: 0 0% 98%;
 
-    /* Cyan accent */
-    --accent: 188 94% 38%;
+    /* Amber accent */
+    --accent: 43 96% 48%;
     --accent-foreground: 0 0% 98%;
 
-    /* Secondary cyan for gradients */
-    --purple-accent: 188 94% 33%;
+    /* Secondary amber for gradients */
+    --purple-accent: 43 96% 40%;
 
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -40,15 +40,15 @@ All colors MUST be HSL.
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 188 94% 43%;
+    --ring: 43 96% 56%;
 
     --radius: 0.75rem;
 
-    /* Cyan gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(188 94% 40%));
+    /* Amber gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(43 96% 50%));
     --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--purple-accent)));
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--purple-accent)));
-    --gradient-japanese: linear-gradient(45deg, hsl(188 94% 43%), hsl(188 94% 38%), hsl(188 94% 33%));
+    --gradient-japanese: linear-gradient(45deg, hsl(43 96% 56%), hsl(43 96% 48%), hsl(43 96% 40%));
 
     /* Shadows for depth */
     --shadow-elegant: 0 20px 50px -10px hsl(var(--primary) / 0.3);
@@ -65,7 +65,7 @@ All colors MUST be HSL.
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 188 94% 43%;
+    --sidebar-ring: 43 96% 56%;
   }
 
   .dark {
@@ -82,10 +82,10 @@ All colors MUST be HSL.
     --primary: 0 0% 98%;
     --primary-foreground: 240 6% 10%;
 
-    --accent: 188 94% 38%;
+    --accent: 43 96% 48%;
     --accent-foreground: 0 0% 98%;
 
-    --purple-accent: 188 94% 33%;
+    --purple-accent: 43 96% 40%;
 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -98,25 +98,25 @@ All colors MUST be HSL.
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 188 94% 43%;
+    --ring: 43 96% 56%;
 
-    /* Cyan gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(188 94% 40%));
+    /* Amber gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(43 96% 50%));
     --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--purple-accent)));
     --gradient-hero: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(var(--accent)), hsl(var(--purple-accent)));
-    --gradient-japanese: linear-gradient(45deg, hsl(240 10% 3.9%), hsl(188 94% 40%), hsl(188 94% 33%));
+    --gradient-japanese: linear-gradient(45deg, hsl(240 10% 3.9%), hsl(43 96% 50%), hsl(43 96% 40%));
 
     --shadow-elegant: 0 20px 50px -10px hsl(0 0% 0% / 0.5);
     --shadow-glow: 0 0 40px hsl(var(--accent) / 0.3);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 188 94% 38%;
+    --sidebar-primary: 43 96% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 188 94% 43%;
+    --sidebar-ring: 43 96% 56%;
   }
   .theme {
     --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;

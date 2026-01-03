@@ -38,7 +38,7 @@ const Terms = () => {
           >
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p className="text-muted-foreground leading-relaxed">
-                Welcome to <strong className="text-foreground">TOESPRING</strong>. These Terms of Service ("Terms") govern your access to and use of our website, products, and services. By accessing our website or making a purchase, you agree to be bound by these Terms. Please read them carefully.
+                Welcome to <strong className="text-foreground">MONTE VELORIS</strong>. These Terms of Service ("Terms") govern your access to and use of our website, products, and services. By accessing our website or making a purchase, you agree to be bound by these Terms. Please read them carefully.
               </p>
 
               <div className="mt-8 space-y-8">
@@ -52,7 +52,7 @@ const Terms = () => {
                   <h2 className="text-2xl font-bold text-foreground mb-4">1. Acceptance of Terms</h2>
                   <div className="space-y-3 text-muted-foreground">
                     <p>By accessing or using our website, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree with these Terms, you must not use our services.</p>
-                    <p>These Terms constitute a legally binding agreement between you and TOESPRING, governed by the laws of India and subject to the exclusive jurisdiction of courts in India.</p>
+                    <p>These Terms constitute a legally binding agreement between you and MONTE VELORIS, governed by the laws of India and subject to the exclusive jurisdiction of courts in India.</p>
                   </div>
                 </motion.div>
 
@@ -126,16 +126,16 @@ const Terms = () => {
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <Truck className="h-6 w-6 text-primary" />
-                    <h2 className="text-2xl font-bold text-foreground">4. Shipping</h2>
+                    <h2 className="text-2xl font-bold text-foreground">4. Shipping and Delivery</h2>
                   </div>
                   <div className="space-y-3 text-muted-foreground">
                     <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>We ship throughout India. Shipping times vary by location (typically 5-10 business days)</li>
+                      <li>We ship throughout India. Delivery times vary by location (typically 5-10 business days)</li>
                       <li>Shipping charges are calculated at checkout based on destination and order value</li>
-                      <li>You must provide accurate shipping address. We are not liable for shipping failures due to incorrect addresses</li>
-                      <li>Risk of loss and title pass to you upon shipping to the carrier</li>
-                      <li>Shipping delays due to circumstances beyond our control (natural disasters, strikes, etc.) are not our responsibility</li>
-                      <li>You may be required to provide identification and sign for shipping</li>
+                      <li>You must provide accurate shipping address. We are not liable for delivery failures due to incorrect addresses</li>
+                      <li>Risk of loss and title pass to you upon delivery to the carrier</li>
+                      <li>Delivery delays due to circumstances beyond our control (natural disasters, strikes, etc.) are not our responsibility</li>
+                      <li>You may be required to provide identification and sign for delivery</li>
                     </ul>
                   </div>
                 </motion.div>
@@ -155,7 +155,7 @@ const Terms = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">Return Policy</h3>
                       <ul className="list-disc list-inside ml-4 space-y-1">
-                        <li>Items must be returned within 7 days of receipt in original condition (unworn, with tags, in original packaging)</li>
+                        <li>Items must be returned within 7 days of delivery in original condition (unworn, with tags, in original packaging)</li>
                         <li>Defective or damaged items may be returned within 15 days</li>
                         <li>Customized or personalized items are non-returnable unless defective</li>
                         <li>Return shipping costs are borne by the customer unless the item is defective or wrong item was delivered</li>
@@ -208,9 +208,9 @@ const Terms = () => {
                     <ul className="list-disc list-inside ml-4 space-y-1">
                       <li>Text, graphics, logos, images, product designs</li>
                       <li>Software, code, and website design</li>
-                      <li>Trademarks and brand names (including "TOESPRING")</li>
+                      <li>Trademarks and brand names (including "MONTE VELORIS")</li>
                     </ul>
-                    <p className="mt-4">are the property of TOESPRING or its licensors and are protected by Indian copyright, trademark, and other intellectual property laws. You may not reproduce, distribute, modify, or create derivative works without our written permission.</p>
+                    <p className="mt-4">are the property of MONTE VELORIS or its licensors and are protected by Indian copyright, trademark, and other intellectual property laws. You may not reproduce, distribute, modify, or create derivative works without our written permission.</p>
                   </div>
                 </motion.div>
 
@@ -248,7 +248,7 @@ const Terms = () => {
                   <div className="space-y-3 text-muted-foreground">
                     <p>To the maximum extent permitted by Indian law:</p>
                     <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>TOESPRING shall not be liable for any indirect, incidental, special, consequential, or punitive damages</li>
+                      <li>MONTE VELORIS shall not be liable for any indirect, incidental, special, consequential, or punitive damages</li>
                       <li>Our total liability shall not exceed the amount you paid for the product in question</li>
                       <li>We are not responsible for damages resulting from:</li>
                       <ul className="list-disc list-inside ml-8 mt-1 space-y-1">
@@ -339,9 +339,9 @@ const Terms = () => {
                   <div className="space-y-3 text-muted-foreground">
                     <p>For questions about these Terms, please contact us:</p>
                     <div className="bg-background border border-border/30 rounded p-4 mt-4">
-                      <p><strong className="text-foreground">TOESPRING</strong></p>
-                      <p>Email: <a href="mailto:legal@toespring.com" className="text-primary hover:underline">legal@toespring.com</a></p>
-                      <p>Customer Service: <a href="mailto:support@toespring.com" className="text-primary hover:underline">support@toespring.com</a></p>
+                      <p><strong className="text-foreground">MONTE VELORIS</strong></p>
+                      <p>Email: <a href="mailto:legal@monteveloris.com" className="text-primary hover:underline">legal@monteveloris.com</a></p>
+                      <p>Customer Service: <a href="mailto:support@monteveloris.com" className="text-primary hover:underline">support@monteveloris.com</a></p>
                       <p>Phone: +91-XXXX-XXXXXX</p>
                       <p className="mt-2">Address: [Company Address], India</p>
                     </div>

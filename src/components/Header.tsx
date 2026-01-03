@@ -1,29 +1,41 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Search, User, ArrowUp, Zap } from 'lucide-react';
+import { ShoppingBag, Menu, X, Sun, Moon, Search, User, ArrowUp, Zap } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCart } from '@/contexts/CartContext';
 import { SearchInput } from '@/components/SearchInput';
+import { MensCategoriesDropdown } from '@/components/MensCategoriesDropdown';
+import { WomensCategoriesDropdown } from '@/components/WomensCategoriesDropdown';
+import { KidsCategoriesDropdown } from '@/components/KidsCategoriesDropdown';
+import { MobileCategoriesSidebar } from '@/components/MobileCategoriesSidebar';
 import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler';
 import { isCustomerLoggedIn } from '@/lib/shopify';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<'men' | 'women' | 'kids' | null>(null);
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+  const [selectedGenderForMobile, setSelectedGenderForMobile] = useState<'men' | 'women' | 'kids' | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { getTotalItems } = useCart();
   const location = useLocation();
+  const totalItems = getTotalItems();
 
   // Check login status directly (simpler approach)
   const isLoggedIn = isCustomerLoggedIn();
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Articles', href: '/catalog' },
-    { name: 'Spring mode', href: '/spring-mode' },
+    { name: 'Men', href: '/men' },
+    { name: 'Women', href: '/women' },
+    { name: 'Kids', href: '/kids' },
+    { name: 'Catalog', href: '/catalog' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -113,10 +125,10 @@ export function Header() {
               <Link to="/" className="flex items-center space-x-2">
                 <img 
                   src="/monte-veloris-logo.png" 
-                  alt="TOESPRING" 
+                  alt="MONTEVELORIS" 
                   className="h-8 sm:h-9 object-contain"
                 />
-                <span className="text-xl sm:text-2xl font-bold text-[#06b6d4]">TOESPRING</span>
+                <span className="text-xl sm:text-2xl font-bold text-[#d97706]">MONTE VELORIS</span>
               </Link>
             </motion.div>
 
@@ -128,6 +140,12 @@ export function Header() {
                   className="relative"
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.2 }}
+                  onMouseEnter={() => {
+                    if (item.name === 'Men' || item.name === 'Women' || item.name === 'Kids') {
+                      setHoveredCategory(item.name.toLowerCase() as 'men' | 'women' | 'kids');
+                    }
+                  }}
+                  onMouseLeave={() => setHoveredCategory(null)}
                 >
                   <Link
                     to={item.href}
@@ -140,13 +158,30 @@ export function Header() {
                     {item.name}
                     {isActive(item.href) && (
                       <motion.div
-                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#06b6d4] dark:bg-accent rounded-full"
+                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#d97706] dark:bg-accent rounded-full"
                         layoutId="activeIndicator"
                         initial={false}
                         transition={{ duration: 0.3 }}
                       />
                     )}
                   </Link>
+                  
+                  {/* Category Preview/Dropdown */}
+                  {item.name === 'Men' && (
+                    <MensCategoriesDropdown
+                      isVisible={hoveredCategory === 'men'}
+                    />
+                  )}
+                  {item.name === 'Women' && (
+                    <WomensCategoriesDropdown
+                      isVisible={hoveredCategory === 'women'}
+                    />
+                  )}
+                  {item.name === 'Kids' && (
+                    <KidsCategoriesDropdown
+                      isVisible={hoveredCategory === 'kids'}
+                    />
+                  )}
                 </motion.div>
               ))}
             </nav>
@@ -180,6 +215,26 @@ export function Header() {
               >
                 <User className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
               </motion.button>
+
+              {/* Cart */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => window.location.href = '/cart'}
+                className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <ShoppingBag className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
+                {totalItems > 0 && (
+                  <motion.div
+                    className="absolute -top-1 -right-1 h-5 w-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {totalItems}
+                  </motion.div>
+                )}
+              </motion.button>
             </div>
 
             {/* Mobile Actions */}
@@ -193,6 +248,26 @@ export function Header() {
                 className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <Search className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
+              </motion.button>
+
+              {/* Cart */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => window.location.href = '/cart'}
+                className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <ShoppingBag className="h-5 w-5 text-[#F4F1EA] dark:text-foreground" />
+                {totalItems > 0 && (
+                  <motion.div
+                    className="absolute -top-1 -right-1 h-5 w-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {totalItems}
+                  </motion.div>
+                )}
               </motion.button>
 
               {/* Mobile Menu Button */}
@@ -250,20 +325,50 @@ export function Header() {
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`block px-4 py-3 rounded-lg transition-colors ${
-                        isActive(item.href)
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-muted/50'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+                  {navigation.map((item) => {
+                    // Handle Men, Women, and Kids differently on mobile
+                    if (item.name === 'Men' || item.name === 'Women' || item.name === 'Kids') {
+                      return (
+                        <button
+                          key={item.name}
+                          onClick={() => {
+                            setIsMobileCategoriesOpen(true);
+                            setIsMobileMenuOpen(false);
+                            // Set the selected gender for the sidebar
+                            setSelectedGenderForMobile(item.name.toLowerCase() as 'men' | 'women' | 'kids');
+                          }}
+                          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors text-left ${
+                            isActive(item.href)
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <span>{item.name}</span>
+                          <div className="text-muted-foreground">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </button>
+                      );
+                    }
+                    
+                    // Regular navigation for other items
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`block px-4 py-3 rounded-lg transition-colors ${
+                          isActive(item.href)
+                            ? 'bg-accent text-accent-foreground'
+                            : 'hover:bg-muted/50'
+                        }`}
+                      >
+                        {item.name}
+                      </Link>
+                    );
+                  })}
                 </nav>
 
                 {/* Actions */}
@@ -299,6 +404,16 @@ export function Header() {
                     Profile
                   </button>
                   
+                  <button
+                    onClick={() => {
+                      window.location.href = '/cart';
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <ShoppingBag className="h-5 w-5 mr-3 text-[#F4F1EA] dark:text-foreground" />
+                    Cart ({totalItems})
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -312,7 +427,17 @@ export function Header() {
         onClose={() => setIsSearchOpen(false)}
       />
 
-      {/* Scroll to Top Button */}
+      {/* Mobile Categories Sidebar */}
+      <MobileCategoriesSidebar
+        isOpen={isMobileCategoriesOpen}
+        onClose={() => {
+          setIsMobileCategoriesOpen(false);
+          setSelectedGenderForMobile(null);
+        }}
+        selectedGender={selectedGenderForMobile}
+      />
+
+      {/* Scroll to Top Button - Positioned left of chatbot */}
       <AnimatePresence>
         {showScrollToTop && (
           <motion.button

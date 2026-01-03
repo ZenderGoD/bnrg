@@ -19,8 +19,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { auth, users } from '@/lib/api';
+import { AdminChatbot } from '@/components/AdminChatbot';
 import { AdminProvider } from '@/contexts/AdminContext';
 import { sanitizeConvexError } from '@/lib/errorHandler';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { ResizableAdminLayout } from '@/components/ResizableAdminLayout';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,7 +36,7 @@ type Product = {
   price: number;
   mrp?: number;
   currencyCode: string;
-  images: Array<{ url: string; altText?: string; locked?: boolean }>;
+  images: Array<{ url: string; altText?: string }>;
   variants: Array<{
     id: string;
     title: string;
@@ -57,10 +60,11 @@ export default function Admin() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
     title?: boolean;
     handle?: boolean;
+    price?: boolean;
+    variants?: boolean;
   }>({});
   const { toast } = useToast();
 
@@ -149,7 +153,7 @@ export default function Admin() {
     };
   }, [navigate, toast, convex]);
 
-  // Fetch all articles - always call hooks (React requirement)
+  // Fetch all products - always call hooks (React requirement)
   // For queries that need to be skipped, we'll handle null/undefined results in render
   const products = useQuery(
     api.products.getAllIncludingArchived, 
@@ -298,7 +302,7 @@ export default function Admin() {
     images: [],
     variants: [],
     tags: [],
-    collection: 'articles',
+    collection: 'mens-collection',
     category: '',
   });
 
@@ -325,6 +329,19 @@ export default function Admin() {
     setNewProduct({ ...newProduct, variants });
   };
 
+  // Update variant prices when base price changes
+  useEffect(() => {
+    if (newProduct.variants.length > 0 && newProduct.price > 0) {
+      const needsUpdate = newProduct.variants.some(v => v.price !== newProduct.price);
+      if (needsUpdate) {
+        const updatedVariants = newProduct.variants.map(variant => ({
+          ...variant,
+          price: newProduct.price,
+        }));
+        setNewProduct(prev => ({ ...prev, variants: updatedVariants }));
+      }
+    }
+  }, [newProduct.price]);
   
   const [imageStorageIds, setImageStorageIds] = useState<Record<number, string>>({});
   
@@ -367,7 +384,7 @@ export default function Admin() {
       setNewProduct(prev => {
         const newImages = [...prev.images];
         if (!newImages[index]) {
-          newImages[index] = { url: '', altText: '', locked: false };
+          newImages[index] = { url: '', altText: '' };
         }
         newImages[index] = { ...newImages[index], url: fileUrl || '' };
         return { ...prev, images: newImages };
@@ -397,7 +414,7 @@ export default function Admin() {
     const startIndex = newProduct.images.length;
     
     // Add placeholder entries
-    const newImages = [...newProduct.images, ...fileArray.map(() => ({ url: '', altText: '', locked: false }))];
+    const newImages = [...newProduct.images, ...fileArray.map(() => ({ url: '', altText: '' }))];
     setNewProduct({ ...newProduct, images: newImages });
     
     // Upload all files
@@ -541,6 +558,21 @@ export default function Admin() {
       if (!newProduct.handle?.trim()) {
         errors.handle = true;
       }
+      if (!newProduct.price || newProduct.price <= 0) {
+        errors.price = true;
+      }
+      
+      // Validate that at least one size is selected
+      if (newProduct.variants.length === 0) {
+        errors.variants = true;
+        setFieldErrors(errors);
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one UK size",
+          variant: "destructive",
+        });
+        return;
+      }
       
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
@@ -557,16 +589,16 @@ export default function Admin() {
 
       await createProduct({
         title: newProduct.title,
-        description: newProduct.description || '',
+        description: newProduct.description,
         handle: newProduct.handle,
-        price: 0,
-        mrp: 0,
-        currencyCode: 'INR',
+        price: newProduct.price,
+        mrp: newProduct.mrp || undefined,
+        currencyCode: newProduct.currencyCode,
         images: newProduct.images.filter(img => img.url),
-        variants: [],
-        tags: [],
-        collection: 'articles',
-        category: undefined,
+        variants: newProduct.variants,
+        tags: newProduct.tags.filter(tag => tag.trim()),
+        collection: newProduct.collection,
+        category: newProduct.category || undefined,
       });
 
       toast({
@@ -585,7 +617,7 @@ export default function Admin() {
         images: [],
         variants: [],
         tags: [],
-        collection: 'articles',
+        collection: 'mens-collection',
         category: '',
       });
       setImageStorageIds({});
@@ -697,15 +729,20 @@ export default function Admin() {
       }}
       onOpenDialog={() => setShowAddDialog(true)}
     >
-      <div className="h-full overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto bg-background">
-          <div className="container mx-auto px-4 py-8 pt-20">
+      <SidebarProvider defaultOpen={false}>
+        <ResizableAdminLayout sidebar={<AdminChatbot />}>
+          <SidebarInset className="h-full overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-y-auto bg-background">
+            <div className="container mx-auto px-4 py-8 pt-20">
             <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                  Admin Panel
-                </h1>
-                <p className="text-muted-foreground mt-2">Manage products, orders, and users</p>
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                    Admin Panel
+                  </h1>
+                  <p className="text-muted-foreground mt-2">Manage products, orders, and users</p>
+                </div>
               </div>
           <Dialog open={showAddDialog} onOpenChange={(open) => {
             setShowAddDialog(open);
@@ -716,12 +753,12 @@ export default function Admin() {
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-accent to-primary">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Article
+                Add Product
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add New Article</DialogTitle>
+                <DialogTitle>Add New Product</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -765,6 +802,118 @@ export default function Admin() {
                       className={fieldErrors.handle ? "border-destructive border-2" : ""}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label className="flex items-center">
+                    Description
+                    <InfoIcon description="Detailed product description for customers" />
+                  </Label>
+                  <Textarea
+                    value={newProduct.description}
+                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    placeholder="Product description..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                  <div>
+                    <Label className="flex items-center">
+                      Price *
+                      <InfoIcon description="Selling price in INR" />
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newProduct.price || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNewProduct({ 
+                          ...newProduct, 
+                          price: value === '' ? 0 : parseFloat(value) || 0 
+                        });
+                        // Clear error when user starts typing
+                        if (fieldErrors.price) {
+                          setFieldErrors(prev => ({ ...prev, price: false }));
+                        }
+                      }}
+                      placeholder="129.99"
+                      className={fieldErrors.price ? "border-destructive border-2" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label className="flex items-center">
+                      MRP
+                      <InfoIcon description="Maximum Retail Price (for discount calculation)" />
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newProduct.mrp || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNewProduct({ 
+                          ...newProduct, 
+                          mrp: value === '' ? 0 : parseFloat(value) || 0 
+                        });
+                      }}
+                      placeholder="199.99"
+                    />
+                    {newProduct.mrp && newProduct.mrp > newProduct.price && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
+                        {Math.round(((newProduct.mrp - newProduct.price) / newProduct.mrp) * 100)}% OFF
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="flex items-center">
+                      Currency
+                      <InfoIcon description="Currency code (INR only)" />
+                    </Label>
+                    <Select
+                      value={newProduct.currencyCode}
+                      onValueChange={(value) => setNewProduct({ ...newProduct, currencyCode: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="INR">INR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="flex items-center">
+                      Collection *
+                      <InfoIcon description="Product collection category" />
+                    </Label>
+                    <Select
+                      value={newProduct.collection}
+                      onValueChange={(value) => setNewProduct({ ...newProduct, collection: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mens-collection">Men's Collection</SelectItem>
+                        <SelectItem value="womens-collection">Women's Collection</SelectItem>
+                        <SelectItem value="kids-collection">Kids' Collection</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="flex items-center">
+                    Category (Optional)
+                    <InfoIcon description="Product subcategory for better organization. Leave empty or enter your own category." />
+                  </Label>
+                  <Input
+                    value={newProduct.category || ''}
+                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                    placeholder="e.g., Premium Lifestyle, Athletic Performance, or your own category"
+                  />
                 </div>
 
                 <div>
@@ -854,14 +1003,7 @@ export default function Admin() {
                               {img.url.match(/\.(mp4|webm|ogg)$/i) ? (
                                 <Video className="h-12 w-12 text-muted-foreground flex-shrink-0" />
                               ) : (
-                                <div className="relative">
-                                  <img src={img.url} alt={img.altText} className={cn("h-12 w-12 object-cover rounded flex-shrink-0", img.locked && "blur-sm")} />
-                                  {img.locked && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
-                                      <Lock className="h-4 w-4 text-white" />
-                                    </div>
-                                  )}
-                                </div>
+                                <img src={img.url} alt={img.altText} className="h-12 w-12 object-cover rounded flex-shrink-0" />
                               )}
                               <div className="flex-1">
                                 <Input
@@ -875,18 +1017,6 @@ export default function Admin() {
                                   className="text-sm"
                                 />
                               </div>
-                              <Button
-                                variant={img.locked ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => {
-                                  const newImages = [...newProduct.images];
-                                  newImages[idx].locked = !newImages[idx].locked;
-                                  setNewProduct({ ...newProduct, images: newImages });
-                                }}
-                                title={img.locked ? "Unlock image" : "Lock image"}
-                              >
-                                <Lock className={cn("h-4 w-4", img.locked && "fill-current")} />
-                              </Button>
                             </>
                           ) : (
                             <>
@@ -972,13 +1102,77 @@ export default function Admin() {
                   </Button>
                 </div>
 
+                <div>
+                  <Label className="flex items-center mb-3">
+                    Select UK Sizes *
+                    <InfoIcon description="Select the UK sizes available for this product. Each selected size will be available for purchase." />
+                  </Label>
+                  <div className={cn(
+                    "p-4 border-2 rounded-lg",
+                    fieldErrors.variants ? "border-destructive" : "border-border"
+                  )}>
+                    <div className="flex flex-wrap gap-3">
+                      {ukSizes.map((size) => {
+                        const isSelected = getSelectedSizes().includes(size);
+                        return (
+                          <div key={size} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`size-${size}`}
+                              checked={isSelected}
+                              onCheckedChange={(checked) => {
+                                const currentSizes = getSelectedSizes();
+                                let newSizes: string[];
+                                if (checked) {
+                                  newSizes = [...currentSizes, size];
+                                } else {
+                                  newSizes = currentSizes.filter(s => s !== size);
+                                }
+                                updateVariantsFromSizes(newSizes);
+                                if (fieldErrors.variants) {
+                                  setFieldErrors(prev => ({ ...prev, variants: false }));
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`size-${size}`}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {size}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {getSelectedSizes().length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Selected: {getSelectedSizes().join(', ')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="flex items-center">
+                    Tags (comma-separated)
+                    <InfoIcon description="Searchable tags for better product discoverability" />
+                  </Label>
+                  <Input
+                    value={newProduct.tags.join(', ')}
+                    onChange={(e) => setNewProduct({
+                      ...newProduct,
+                      tags: e.target.value.split(',').map(t => t.trim()).filter(t => t),
+                    })}
+                    placeholder="nike, running, athletic"
+                  />
+                </div>
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setShowAddDialog(false)}>
                     Cancel
                   </Button>
                   <Button onClick={handleAddProduct} className="bg-gradient-to-r from-accent to-primary">
                     <Save className="mr-2 h-4 w-4" />
-                    Create Article
+                    Create Product
                   </Button>
                 </div>
               </div>
@@ -987,14 +1181,26 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="products">
               <Package className="h-4 w-4 mr-2" />
-              Articles
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="orders">
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              Orders
             </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="h-4 w-4 mr-2" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="user-management">
+              <Users className="h-4 w-4 mr-2" />
+              User Management
+            </TabsTrigger>
+            <TabsTrigger value="discounts">
+              <Ticket className="h-4 w-4 mr-2" />
+              Discounts
             </TabsTrigger>
             <TabsTrigger value="homepage">
               <ImageIcon className="h-4 w-4 mr-2" />
@@ -1009,10 +1215,10 @@ export default function Admin() {
               </div>
             ) : (products || []).length === 0 ? (
               <Card className="p-12 text-center">
-                <p className="text-muted-foreground mb-4">No articles yet</p>
+                <p className="text-muted-foreground mb-4">No products yet</p>
                 <Button onClick={() => setShowAddDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Article
+                  Add Your First Product
                 </Button>
               </Card>
             ) : (
@@ -1210,7 +1416,381 @@ export default function Admin() {
             )}
           </TabsContent>
 
-          {/* Orders, User Management, Users, and Discounts tabs removed */}
+          {/* Orders Tab */}
+          <TabsContent value="orders" className="mt-6">
+            {allOrders === undefined || allOrders === null ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading orders...</p>
+              </div>
+            ) : (allOrders || []).length === 0 ? (
+              <Card className="p-12 text-center">
+                <p className="text-muted-foreground">No orders yet</p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {(allOrders || []).map((order) => (
+                  <Card key={order._id} className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">Order #{order.orderNumber}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold">₹{order.totalPrice.toFixed(2)}</p>
+                        <div className="flex gap-2 mt-2">
+                          <Select
+                            value={order.fulfillmentStatus}
+                            onValueChange={async (value) => {
+                              try {
+                                await updateOrderStatus({
+                                  id: order._id,
+                                  fulfillmentStatus: value,
+                                });
+                                toast({ title: "Status updated" });
+                              } catch (error: unknown) {
+                                const message = sanitizeConvexError(error);
+                                toast({
+                                  title: "Error",
+                                  description: message,
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unfulfilled">Unfulfilled</SelectItem>
+                              <SelectItem value="partial">Partial</SelectItem>
+                              <SelectItem value="fulfilled">Fulfilled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={order.financialStatus}
+                            onValueChange={async (value) => {
+                              try {
+                                await updateOrderStatus({
+                                  id: order._id,
+                                  financialStatus: value,
+                                });
+                                toast({ title: "Status updated" });
+                              } catch (error: unknown) {
+                                const message = sanitizeConvexError(error);
+                                toast({
+                                  title: "Error",
+                                  description: message,
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="refunded">Refunded</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-sm p-2 bg-muted rounded">
+                          <span>{item.title} x{item.quantity}</span>
+                          <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Payment Section */}
+                    {(() => {
+                      const payment = getPaymentByOrderId(order._id);
+                      return (
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" />
+                              Payment Status
+                            </h4>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedPaymentOrderId(order._id);
+                                    setPaymentAmount(payment?.amountPaid.toString() || "0");
+                                    setPaymentNotes(payment?.notes || "");
+                                    setPaymentTransactionId(payment?.transactionId || "");
+                                  }}
+                                >
+                                  Update Payment
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Update Payment - Order #{order.orderNumber}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 mt-4">
+                                  <div>
+                                    <Label>Total Amount</Label>
+                                    <p className="text-lg font-bold">₹{order.totalPrice.toFixed(2)}</p>
+                                  </div>
+                                  <div>
+                                    <Label>Amount Paid *</Label>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={paymentAmount}
+                                      onChange={(e) => setPaymentAmount(e.target.value)}
+                                      placeholder="0.00"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Enter the amount that has been paid
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label>Transaction ID</Label>
+                                    <Input
+                                      value={paymentTransactionId}
+                                      onChange={(e) => setPaymentTransactionId(e.target.value)}
+                                      placeholder="UPI Transaction ID (optional)"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Notes</Label>
+                                    <Textarea
+                                      value={paymentNotes}
+                                      onChange={(e) => setPaymentNotes(e.target.value)}
+                                      placeholder="Additional notes (optional)"
+                                      rows={3}
+                                    />
+                                  </div>
+                                  <Button
+                                    onClick={async () => {
+                                      if (!payment?._id) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Payment record not found. Payment should be created when order is created.",
+                                          variant: "destructive",
+                                        });
+                                        return;
+                                      }
+                                      
+                                      try {
+                                        await updatePaymentMutation({
+                                          paymentId: payment._id,
+                                          amountPaid: parseFloat(paymentAmount) || 0,
+                                          transactionId: paymentTransactionId || undefined,
+                                          notes: paymentNotes || undefined,
+                                        });
+                                        toast({ title: "Payment updated successfully" });
+                                        setSelectedPaymentOrderId(null);
+                                        setPaymentAmount("");
+                                        setPaymentNotes("");
+                                        setPaymentTransactionId("");
+                                      } catch (error: unknown) {
+                                        const message = sanitizeConvexError(error);
+                                        toast({
+                                          title: "Error",
+                                          description: message,
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                    className="w-full"
+                                  >
+                                    Update Payment
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                          
+                          {payment ? (
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Amount Paid:</span>
+                                <span className="font-semibold">₹{payment.amountPaid.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Remaining:</span>
+                                <span className="font-semibold">
+                                  ₹{(payment.amount - payment.amountPaid).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Status:</span>
+                                <span className={`font-semibold ${
+                                  payment.status === "paid" ? "text-green-600" :
+                                  payment.status === "partial" ? "text-orange-600" :
+                                  "text-red-600"
+                                }`}>
+                                  {payment.status.toUpperCase()}
+                                </span>
+                              </div>
+                              {payment.transactionId && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Transaction ID:</span>
+                                  <span className="font-mono text-xs">{payment.transactionId}</span>
+                                </div>
+                              )}
+                              {payment.notes && (
+                                <div className="mt-2 p-2 bg-muted rounded text-xs">
+                                  <strong>Notes:</strong> {payment.notes}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              No payment record found. Payment will be created when customer proceeds to checkout.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* User Management Tab */}
+          <TabsContent value="user-management" className="mt-6">
+            {usersWithStats === undefined || usersWithStats === null ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading user data...</p>
+              </div>
+            ) : (usersWithStats || []).length === 0 ? (
+              <Card className="p-12 text-center">
+                <p className="text-muted-foreground">No users yet</p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-3 font-medium">User</th>
+                            <th className="text-left p-3 font-medium">Email</th>
+                            <th className="text-center p-3 font-medium">Purchases</th>
+                            <th className="text-center p-3 font-medium">Total Chats</th>
+                            <th className="text-center p-3 font-medium">Total Messages</th>
+                            <th className="text-center p-3 font-medium">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(usersWithStats || []).map((user) => (
+                            <tr key={user._id} className="border-b hover:bg-muted/50">
+                              <td className="p-3">
+                                <div>
+                                  <div className="font-medium">{user.displayName}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {user.role || 'customer'}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3 text-sm">{user.email}</td>
+                              <td className="p-3 text-center">
+                                <span className="font-medium">{user.purchaseCount || 0}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="font-medium">{user.totalChats || 0}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="font-medium">{user.totalMessages || 0}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                {(user.totalChats || 0) > 0 ? (
+                                  <Link to={`/admin/users/${user._id}/chats`}>
+                                    <Button size="sm" variant="outline">
+                                      View Chats
+                                    </Button>
+                                  </Link>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">No chats</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="mt-6">
+            {allUsers === undefined || allUsers === null ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading users...</p>
+              </div>
+            ) : (allUsers || []).length === 0 ? (
+              <Card className="p-12 text-center">
+                <p className="text-muted-foreground">No users yet</p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {(allUsers || []).map((user) => (
+                  <Card key={user._id} className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold">{user.displayName}</h3>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Credits: ${user.creditsBalance.toFixed(2)} | 
+                          Earned: ${user.creditsEarned.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Select
+                          value={user.role || "customer"}
+                          onValueChange={async (value) => {
+                            try {
+                              await users.update(user._id, {
+                                role: value as "customer" | "admin" | "manager",
+                              });
+                              toast({ title: "Role updated" });
+                            } catch (error: unknown) {
+                              const message = sanitizeConvexError(error);
+                              toast({
+                                title: "Error",
+                                description: message,
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="customer">Customer</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           {/* Inventory Tab */}
           <TabsContent value="inventory" className="mt-6">
@@ -1385,6 +1965,373 @@ export default function Admin() {
             </div>
           </TabsContent>
 
+          <TabsContent value="discounts" className="mt-6">
+            <div className="space-y-6">
+              {/* Coupon Codes Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Coupon Codes</CardTitle>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Coupon Code
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Create Coupon Code</DialogTitle>
+                        </DialogHeader>
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            const code = formData.get('code') as string;
+                            const discountValue = parseFloat(formData.get('discountValue') as string);
+                            const isActive = formData.get('isActive') === 'on';
+                            const expiresAtStr = formData.get('expiresAt') as string;
+                            const usageLimitStr = formData.get('usageLimit') as string;
+                            const minPurchaseStr = formData.get('minPurchase') as string;
+                            const description = formData.get('description') as string;
+                            
+                            try {
+                              await createCoupon({
+                                code,
+                                discountType: couponDiscountType,
+                                discountValue,
+                                isActive,
+                                expiresAt: expiresAtStr ? new Date(expiresAtStr).getTime() : undefined,
+                                usageLimit: usageLimitStr ? parseInt(usageLimitStr) : undefined,
+                                minPurchaseAmount: minPurchaseStr ? parseFloat(minPurchaseStr) : undefined,
+                                description: description || undefined,
+                              });
+                              toast({ title: "Coupon code created" });
+                              e.currentTarget.reset();
+                              setCouponDiscountType('percentage');
+                            } catch (error: unknown) {
+                              const message = sanitizeConvexError(error);
+                              toast({
+                                title: "Error",
+                                description: message,
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="space-y-4 mt-4"
+                        >
+                          <div>
+                            <Label>Code *</Label>
+                            <Input name="code" required placeholder="SAVE20" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Discount Type *</Label>
+                              <Select value={couponDiscountType} onValueChange={(value: 'percentage' | 'fixed') => setCouponDiscountType(value)}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                  <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>Discount Value *</Label>
+                              <Input name="discountValue" type="number" step="0.01" required placeholder="20" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Expires At (Optional)</Label>
+                              <Input name="expiresAt" type="datetime-local" />
+                            </div>
+                            <div>
+                              <Label>Usage Limit (Optional)</Label>
+                              <Input name="usageLimit" type="number" placeholder="100" />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Minimum Purchase Amount (Optional)</Label>
+                            <Input name="minPurchase" type="number" step="0.01" placeholder="500" />
+                          </div>
+                          <div>
+                            <Label>Description (Optional)</Label>
+                            <Textarea name="description" placeholder="Enter description" rows={3} />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input type="checkbox" name="isActive" defaultChecked className="rounded" />
+                            <Label>Active</Label>
+                          </div>
+                          <Button type="submit">Create Coupon</Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {couponCodes === undefined || couponCodes === null ? (
+                    <p className="text-muted-foreground text-sm">Loading coupon codes...</p>
+                  ) : couponCodes.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No coupon codes yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {couponCodes.map((coupon) => (
+                        <div key={coupon._id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-lg">{coupon.code}</p>
+                              <Badge variant={coupon.isActive ? "default" : "secondary"}>
+                                {coupon.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {coupon.discountType === "percentage" 
+                                ? `${coupon.discountValue}% OFF` 
+                                : `₹${coupon.discountValue} OFF`}
+                            </p>
+                            {coupon.description && (
+                              <p className="text-xs text-muted-foreground mt-1">{coupon.description}</p>
+                            )}
+                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                              {coupon.expiresAt && (
+                                <span>Expires: {new Date(coupon.expiresAt).toLocaleDateString()}</span>
+                              )}
+                              {coupon.usageLimit && (
+                                <span>Usage: {coupon.usageCount} / {coupon.usageLimit}</span>
+                              )}
+                              {coupon.minPurchaseAmount && (
+                                <span>Min: ₹{coupon.minPurchaseAmount}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await updateCoupon({
+                                    id: coupon._id,
+                                    isActive: !coupon.isActive,
+                                  });
+                                  toast({ title: "Coupon updated" });
+                                } catch (error: unknown) {
+                                  const message = sanitizeConvexError(error);
+                                  toast({
+                                    title: "Error",
+                                    description: message,
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              {coupon.isActive ? 'Disable' : 'Enable'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm("Are you sure you want to delete this coupon code?")) {
+                                  try {
+                                    await deleteCoupon({ id: coupon._id });
+                                    toast({ title: "Coupon deleted" });
+                                  } catch (error: unknown) {
+                                    const message = sanitizeConvexError(error);
+                                    toast({
+                                      title: "Error",
+                                      description: message,
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Gift Cards Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Gift Cards</CardTitle>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Gift Card
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Create Gift Card</DialogTitle>
+                        </DialogHeader>
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            const code = formData.get('code') as string;
+                            const amount = parseFloat(formData.get('amount') as string);
+                            const isActive = formData.get('isActive') === 'on';
+                            const expiresAtStr = formData.get('expiresAt') as string;
+                            const usageLimitStr = formData.get('usageLimit') as string;
+                            const minPurchaseStr = formData.get('minPurchase') as string;
+                            const description = formData.get('description') as string;
+                            
+                            try {
+                              await createAdminGiftCard({
+                                code,
+                                amount,
+                                isActive,
+                                expiresAt: expiresAtStr ? new Date(expiresAtStr).getTime() : undefined,
+                                usageLimit: usageLimitStr ? parseInt(usageLimitStr) : undefined,
+                                minPurchaseAmount: minPurchaseStr ? parseFloat(minPurchaseStr) : undefined,
+                                description: description || undefined,
+                              });
+                              toast({ title: "Gift card created" });
+                              e.currentTarget.reset();
+                            } catch (error: unknown) {
+                              const message = sanitizeConvexError(error);
+                              toast({
+                                title: "Error",
+                                description: message,
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="space-y-4 mt-4"
+                        >
+                          <div>
+                            <Label>Code *</Label>
+                            <Input name="code" required placeholder="GIFT100" />
+                          </div>
+                          <div>
+                            <Label>Amount (₹) *</Label>
+                            <Input name="amount" type="number" step="0.01" required placeholder="500" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Expires At (Optional)</Label>
+                              <Input name="expiresAt" type="datetime-local" />
+                            </div>
+                            <div>
+                              <Label>Usage Limit (Optional)</Label>
+                              <Input name="usageLimit" type="number" placeholder="1" />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Minimum Purchase Amount (Optional)</Label>
+                            <Input name="minPurchase" type="number" step="0.01" placeholder="1000" />
+                          </div>
+                          <div>
+                            <Label>Description (Optional)</Label>
+                            <Textarea name="description" placeholder="Enter description" rows={3} />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input type="checkbox" name="isActive" defaultChecked className="rounded" />
+                            <Label>Active</Label>
+                          </div>
+                          <Button type="submit">Create Gift Card</Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {adminGiftCards === undefined || adminGiftCards === null ? (
+                    <p className="text-muted-foreground text-sm">Loading gift cards...</p>
+                  ) : adminGiftCards.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No gift cards yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {adminGiftCards.map((giftCard) => (
+                        <div key={giftCard._id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-lg">{giftCard.code}</p>
+                              <Badge variant={giftCard.isActive ? "default" : "secondary"}>
+                                {giftCard.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Value: ₹{giftCard.amount}
+                            </p>
+                            {giftCard.description && (
+                              <p className="text-xs text-muted-foreground mt-1">{giftCard.description}</p>
+                            )}
+                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                              {giftCard.expiresAt && (
+                                <span>Expires: {new Date(giftCard.expiresAt).toLocaleDateString()}</span>
+                              )}
+                              {giftCard.usageLimit && (
+                                <span>Usage: {giftCard.usageCount} / {giftCard.usageLimit}</span>
+                              )}
+                              {giftCard.minPurchaseAmount && (
+                                <span>Min: ₹{giftCard.minPurchaseAmount}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await updateAdminGiftCard({
+                                    id: giftCard._id,
+                                    isActive: !giftCard.isActive,
+                                  });
+                                  toast({ title: "Gift card updated" });
+                                } catch (error: unknown) {
+                                  const message = sanitizeConvexError(error);
+                                  toast({
+                                    title: "Error",
+                                    description: message,
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              {giftCard.isActive ? 'Disable' : 'Enable'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm("Are you sure you want to delete this gift card?")) {
+                                  try {
+                                    await deleteAdminGiftCard({ id: giftCard._id });
+                                    toast({ title: "Gift card deleted" });
+                                  } catch (error: unknown) {
+                                    const message = sanitizeConvexError(error);
+                                    toast({
+                                      title: "Error",
+                                      description: message,
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Homepage Tab - Featured Collections */}
           <TabsContent value="homepage" className="mt-6">
@@ -1779,7 +2726,7 @@ export default function Admin() {
                                       );
                                     })}
                                   {products.filter(p => p.collection === featuredCollectionForm.collectionHandle).length === 0 && (
-                                    <p className="text-sm text-muted-foreground">No articles in this collection yet</p>
+                                    <p className="text-sm text-muted-foreground">No products in this collection yet</p>
                                   )}
                                 </div>
                               ) : (
@@ -1933,7 +2880,7 @@ export default function Admin() {
                                         ?.filter(p => collection.productHandles.includes(p.handle))
                                         .map(p => p.title)
                                         .join(', ') || collection.productHandles.join(', ')
-                                    : 'No articles selected'
+                                    : 'No products selected'
                                 }</p>
                                 {collection.linkUrl && (
                                   <p><strong>Link:</strong> {collection.linkUrl}</p>
@@ -1999,190 +2946,6 @@ export default function Admin() {
               </Card>
             </div>
           </TabsContent>
-
-          {/* Users Tab */}
-          <TabsContent value="users" className="mt-6">
-            {allUsers === undefined || allUsers === null ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading users...</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Search Bar */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Search by name or email..."
-                      value={userSearchQuery}
-                      onChange={(e) => setUserSearchQuery(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                {/* Users List */}
-                {(() => {
-                  const filteredUsers = (allUsers || []).filter(user => {
-                    if (!userSearchQuery) return true;
-                    const query = userSearchQuery.toLowerCase();
-                    const name = (user.firstName + ' ' + user.lastName).toLowerCase();
-                    const email = (user.email || '').toLowerCase();
-                    const displayName = (user.displayName || '').toLowerCase();
-                    return name.includes(query) || email.includes(query) || displayName.includes(query);
-                  });
-
-                  if (filteredUsers.length === 0) {
-                    return (
-                      <Card className="p-12 text-center">
-                        <p className="text-muted-foreground">
-                          {userSearchQuery ? 'No users found matching your search.' : 'No users yet.'}
-                        </p>
-                      </Card>
-                    );
-                  }
-
-                  return (
-                    <div className="space-y-4">
-                      {filteredUsers.map((user) => {
-                        const hasRequestedAuthorization = user.authorizationRequestedAt && !user.isApproved;
-                        return (
-                        <Card 
-                          key={user._id} 
-                          className={cn(
-                            "p-6",
-                            hasRequestedAuthorization && "border-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-950/20"
-                          )}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-semibold">
-                                  {user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'No Name'}
-                                </h3>
-                                {hasRequestedAuthorization && (
-                                  <Badge variant="outline" className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500">
-                                    Authorization Requested
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
-                              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                {user.phone && <span>Phone: {user.phone}</span>}
-                                {user.role && (
-                                  <span className="capitalize">Role: {user.role}</span>
-                                )}
-                                {user.isApproved !== undefined && (
-                                  <span className={user.isApproved ? "text-green-600 dark:text-green-400" : "text-orange-600 dark:text-orange-400"}>
-                                    {user.isApproved ? "✓ Approved" : "Pending Approval"}
-                                  </span>
-                                )}
-                                {user.createdAt && (
-                                  <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
-                                )}
-                                {hasRequestedAuthorization && (
-                                  <span className="text-cyan-600 dark:text-cyan-400">
-                                    Requested: {new Date(user.authorizationRequestedAt).toLocaleDateString()}
-                                  </span>
-                                )}
-                              </div>
-                              {user.address && (
-                                <div className="mt-2 text-sm text-muted-foreground">
-                                  <p>{user.address}</p>
-                                  {user.city && user.state && (
-                                    <p>{user.city}, {user.state} {user.pinCode}</p>
-                                  )}
-                                  {user.country && <p>{user.country}</p>}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              {!user.isApproved && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={async () => {
-                                    try {
-                                      await users.update(user._id, {
-                                        isApproved: true,
-                                      });
-                                      toast({ title: "User approved", description: "User can now view locked content." });
-                                    } catch (error: unknown) {
-                                      const message = sanitizeConvexError(error);
-                                      toast({
-                                        title: "Error",
-                                        description: message,
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }}
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  <Shield className="mr-2 h-4 w-4" />
-                                  Approve
-                                </Button>
-                              )}
-                              {user.isApproved && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={async () => {
-                                    try {
-                                      await users.update(user._id, {
-                                        isApproved: false,
-                                      });
-                                      toast({ title: "Approval revoked", description: "User can no longer view locked content." });
-                                    } catch (error: unknown) {
-                                      const message = sanitizeConvexError(error);
-                                      toast({
-                                        title: "Error",
-                                        description: message,
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <X className="mr-2 h-4 w-4" />
-                                  Revoke
-                                </Button>
-                              )}
-                              <Select
-                                value={user.role || "customer"}
-                                onValueChange={async (value) => {
-                                  try {
-                                    await users.update(user._id, {
-                                      role: value as "customer" | "admin" | "manager",
-                                    });
-                                    toast({ title: "Role updated" });
-                                  } catch (error: unknown) {
-                                    const message = sanitizeConvexError(error);
-                                    toast({
-                                      title: "Error",
-                                      description: message,
-                                      variant: "destructive",
-                                    });
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="customer">Customer</SelectItem>
-                                  <SelectItem value="manager">Manager</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </Card>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-          </TabsContent>
         </Tabs>
 
         {/* Edit Dialog */}
@@ -2190,7 +2953,7 @@ export default function Admin() {
           <Dialog open={isEditing} onOpenChange={setIsEditing}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                        <DialogTitle>Edit Article</DialogTitle>
+                <DialogTitle>Edit Product</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
@@ -2208,7 +2971,7 @@ export default function Admin() {
                     rows={4}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Price</Label>
                     <Input
@@ -2246,6 +3009,14 @@ export default function Admin() {
                       </p>
                     )}
                   </div>
+                  <div>
+                    <Label>Category (Optional)</Label>
+                    <Input
+                      value={editingProduct.category || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                      placeholder="e.g., Premium Lifestyle, Athletic Performance, or your own category"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
@@ -2260,9 +3031,11 @@ export default function Admin() {
             </DialogContent>
           </Dialog>
         )}
-          </div>
-        </div>
-      </div>
+            </div>
+            </div>
+          </SidebarInset>
+        </ResizableAdminLayout>
+      </SidebarProvider>
     </AdminProvider>
   );
 }

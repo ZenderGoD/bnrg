@@ -71,8 +71,8 @@ const INTENT_PATTERNS = {
   ],
   
   check_order: [
-    /(?:order|purchase|shipping).*(status|track|where)/i,
-    /(?:where|when).*(order|package)/i,
+    /(?:order|purchase|delivery|shipping).*(status|track|where)/i,
+    /(?:where|when).*(order|package|delivery)/i,
   ],
   
   // Account intents
@@ -81,6 +81,10 @@ const INTENT_PATTERNS = {
     /(?:my|personal).*(info|details|account)/i,
   ],
   
+  credits_info: [
+    /credits?|points?|rewards?|loyalty/i,
+    /(?:how many|check).*(credits?|points?)/i,
+  ],
   
   // Help and general intents
   greeting: [
@@ -120,8 +124,8 @@ const INTENT_PATTERNS = {
 // Response templates
 const RESPONSE_TEMPLATES = {
   greeting: [
-    "Hey there! 👋 Welcome to TOESPRING! I'm here to help you find the perfect footwear. What are you looking for today?",
-    "Hello! I'm your TOESPRING shopping assistant. Whether you need help finding shoes, checking orders, or have questions, I'm here to help!",
+    "Hey there! 👋 Welcome to MONTEVELORIS! I'm here to help you find the perfect footwear. What are you looking for today?",
+    "Hello! I'm your MONTEVELORIS shopping assistant. Whether you need help finding shoes, checking orders, or have questions, I'm here to help!",
     "Hi! Ready to find some amazing footwear? I can help you search our collection, check sizes, or answer any questions you have.",
   ],
   
@@ -143,6 +147,10 @@ const RESPONSE_TEMPLATES = {
     "Here are some helpful navigation options:",
   ],
   
+  cart_help: [
+    "I can help you with your cart! Let me get that information for you:",
+    "Here's what I can help you with regarding your cart:",
+  ],
   
   account_help: [
     "I can help you with your account information:",
@@ -469,7 +477,7 @@ class ChatbotService {
       case 'navigate_catalog':
         return {
           message: this.getRandomTemplate('navigation_help'),
-          navigation: { path: '/catalog', label: 'Browse All Articles' },
+          navigation: { path: '/catalog', label: 'Browse All Products' },
         };
 
       case 'navigate_men':
@@ -484,7 +492,14 @@ class ChatbotService {
           navigation: { path: '/women', label: "Shop Women's Footwear" },
         };
 
-      // Cart system removed
+      case 'view_cart':
+        return {
+          message: this.getRandomTemplate('cart_help'),
+          navigation: { path: '/cart', label: 'View Your Cart' },
+        };
+
+      case 'add_to_cart':
+        return await this.handleAddToCartRequest(message, request);
 
       case 'check_order':
         return await this.handleOrderInquiry(message, request);
@@ -495,6 +510,11 @@ class ChatbotService {
           navigation: { path: '/profile', label: 'Go to Profile' },
         };
 
+      case 'credits_info':
+        return {
+          message: "Check your MONTEVELORIS credits and see how you can earn more rewards!",
+          navigation: { path: '/credits', label: 'View Credits' },
+        };
 
       case 'get_help':
         return {
@@ -504,6 +524,7 @@ class ChatbotService {
               'Product search and recommendations',
               'Size and fit guidance', 
               'Account and login help',
+              'Credit system questions',
               'General shopping assistance'
             ],
             supportEscalation: true
@@ -519,7 +540,7 @@ class ChatbotService {
                 type: 'email',
                 title: 'Email Support',
                 description: 'Get help via email - usually responds within 24 hours',
-                action: 'mailto:support@toespring.store?subject=Customer Support Request'
+                action: 'mailto:support@monteveloris.store?subject=Customer Support Request'
               },
               {
                 type: 'shopify',
@@ -537,7 +558,7 @@ class ChatbotService {
                 type: 'phone',
                 title: 'Phone Support',
                 description: 'Call us during business hours: Mon-Fri 9AM-6PM',
-                action: 'tel:+1-800-TOESPRING-HELP'
+                action: 'tel:+1-800-MONTEVELORIS-HELP'
               }
             ],
             escalated: true
@@ -618,8 +639,8 @@ class ChatbotService {
     } catch (error) {
       console.error('Product search error:', error);
       return {
-        message: "I'm having trouble searching right now. Please try browsing our articles instead.",
-        navigation: { path: '/catalog', label: 'Browse Articles' },
+        message: "I'm having trouble searching right now. Please try browsing our catalog instead.",
+        navigation: { path: '/catalog', label: 'Browse Catalog' },
       };
     }
   }
@@ -664,7 +685,7 @@ class ChatbotService {
         }
       } catch (error) {
         return {
-          message: "Let me help you find footwear in your price range! Check out our articles with price filters.",
+          message: "Let me help you find footwear in your price range! Check out our catalog with price filters.",
           navigation: { path: '/catalog', label: 'Browse by Price' },
         };
       }
@@ -692,7 +713,7 @@ class ChatbotService {
 
     return {
       message: "I can help you with sizing! Each product page has detailed size charts and fit information. What size are you looking for?",
-          navigation: { path: '/catalog', label: 'Browse Articles' },
+      navigation: { path: '/catalog', label: 'Browse Products' },
     };
   }
 
@@ -701,7 +722,7 @@ class ChatbotService {
     request: ChatbotRequest
   ): Promise<Omit<ChatbotResponse, 'intent' | 'confidence'>> {
     return {
-      message: "I can help you check what's available! All our in-stock items are shown in the articles with real-time availability.",
+      message: "I can help you check what's available! All our in-stock items are shown in the catalog with real-time availability.",
       navigation: { path: '/catalog', label: 'Check Availability' },
     };
   }
@@ -777,8 +798,8 @@ class ChatbotService {
     } catch (error) {
       console.error('Add to cart request error:', error);
       return {
-        message: "I can help you add items to your cart! Let me show you our popular products, or you can browse our articles.",
-          navigation: { path: '/catalog', label: 'Browse Articles' },
+        message: "I can help you add items to your cart! Let me show you our popular products, or you can browse our catalog.",
+        navigation: { path: '/catalog', label: 'Browse Products' },
       };
     }
   }

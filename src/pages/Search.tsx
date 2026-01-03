@@ -66,8 +66,8 @@ const SearchPage = () => {
         <ProductGrid
           products={filteredProducts}
           isLoading={isLoading}
-          title={searchQuery ? `Search Results for "${searchQuery}"` : 'All Articles'}
-          subtitle={`${filteredProducts.length} articles found`}
+          title={searchQuery ? `Search Results for "${searchQuery}"` : 'All Products'}
+          subtitle={`${filteredProducts.length} products found`}
         />
       </div>
     </div>
