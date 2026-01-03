@@ -31,7 +31,7 @@ export function PlatformLogo({
         textAnchor="middle"
         className="fill-current text-2xl font-bold"
       >
-        MONTEVELORIS
+        TOESPRING
       </text>
     </svg>
   );

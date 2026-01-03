@@ -54,7 +54,7 @@ export default function AuthCallback() {
                 <CheckCircle className="w-full h-full" />
               </motion.div>
               <h2 className="text-xl font-semibold text-foreground mb-2">
-                Welcome to MONTEVELORIS!
+                Welcome to TOESPRING!
               </h2>
               <p className="text-muted-foreground text-sm">
                 You've been successfully authenticated with Shopify. Redirecting to your account...

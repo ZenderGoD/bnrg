@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { chatbotService } from '@/lib/chatbotService';
-import { useCart } from '@/contexts/CartContext';
 import { isCustomerLoggedIn } from '@/lib/shopify';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -148,7 +147,7 @@ const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined);
 export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(chatbotReducer, initialState);
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  // Cart system removed
   const saveChat = useMutation(api.chats.saveChat);
 
   // Persist messages to localStorage with better error handling
@@ -306,37 +305,17 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      try {
-        await addToCart(variantId, 1);
-        // Add confirmation message
-        const confirmationMessage: ChatMessage = {
-          id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: 'bot',
-          content: '✅ Added to cart! You can continue shopping or view your cart.',
-          timestamp: new Date(),
-          actions: [
-            createNavigationAction('/cart', 'View Cart'),
-            createNavigationAction('/catalog', 'Continue Shopping')
-          ]
-        };
-        dispatch({ type: 'ADD_MESSAGE', payload: confirmationMessage });
-      } catch (error) {
-        console.error('Failed to add to cart:', error);
-        const errorMessage: ChatMessage = {
-          id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: 'bot',
-          content: '❌ Sorry, there was an issue adding the item to your cart. Please try again.',
-          timestamp: new Date(),
-          actions: [
-            createNavigationAction('/cart', 'View Cart'),
-            createNavigationAction('/catalog', 'Continue Shopping')
-          ]
-        };
-        dispatch({ type: 'ADD_MESSAGE', payload: errorMessage });
-      }
+      // Cart system removed
+      const message: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'bot',
+        content: 'Cart functionality has been removed from this project.',
+        timestamp: new Date(),
+      };
+      dispatch({ type: 'ADD_MESSAGE', payload: message });
     },
     variant: 'default' as const
-  }), [addToCart, createNavigationAction]);
+  }), [createNavigationAction]);
 
   const sendMessage = useCallback(async (content: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -406,7 +385,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       // Additional quick actions based on intent
       switch (response.intent) {
         case 'search_products':
-          actions.push(createNavigationAction('/catalog', 'Browse All Products'));
+          actions.push(createNavigationAction('/catalog', 'Browse All Articles'));
           break;
         case 'check_order':
           actions.push(createNavigationAction('/profile', 'View Orders'));

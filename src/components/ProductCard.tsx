@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Heart } from 'lucide-react';
+import { Heart, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ShopifyProduct, isCustomerLoggedIn, getCustomerToken } from '@/lib/shopify';
+import { ShopifyProduct, isCustomerLoggedIn, getCustomerToken, canViewLockedContent } from '@/lib/shopify';
 import { useToast } from '@/hooks/use-toast';
-import { useCart } from '@/contexts/CartContext';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: ShopifyProduct;
@@ -16,8 +15,9 @@ interface ProductCardProps {
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [canViewLocked, setCanViewLocked] = useState(false);
   const [isLiked, setIsLiked] = useState(() => {
-    // Only show liked products if user is logged in
+    // Only show liked articles if user is logged in
     if (!isCustomerLoggedIn()) return false;
     
     const customerId = getCustomerToken()?.accessToken;
@@ -25,7 +25,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     const likedProducts = JSON.parse(localStorage.getItem(likedKey) || '[]');
     return likedProducts.includes(product.id);
   });
-  const { addToCart, isLoading } = useCart();
+  // Cart system removed
   const { toast } = useToast();
 
   const images = product.images.edges;
@@ -34,14 +34,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const currency = product.priceRange.minVariantPrice.currencyCode;
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (firstVariant) {
-      await addToCart(firstVariant.id);
-    }
-  };
+  useEffect(() => {
+    // Check if user can view locked content
+    canViewLockedContent().then(setCanViewLocked);
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -52,6 +48,9 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     }
     return () => clearInterval(interval);
   }, [isHovered, images.length]);
+
+  const currentImage = images[currentImageIndex]?.node;
+  const isImageLocked = currentImage?.locked && !canViewLocked;
 
   const toggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -133,13 +132,24 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           }}
         >
           {/* Product Image */}
-          <div className="aspect-square overflow-hidden bg-muted/20">
+          <div className="aspect-square overflow-hidden bg-muted/20 relative">
             <motion.img
-              src={images[currentImageIndex]?.node.url || '/placeholder.svg'}
-              alt={images[currentImageIndex]?.node.altText || product.title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              src={currentImage?.url || '/placeholder.svg'}
+              alt={currentImage?.altText || product.title}
+              className={cn(
+                "h-full w-full object-cover transition-transform duration-500 group-hover:scale-110",
+                isImageLocked && "blur-md"
+              )}
               whileHover={{ scale: 1.05 }}
             />
+            {isImageLocked && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <div className="text-center text-white">
+                  <Lock className="h-8 w-8 mx-auto mb-2" />
+                  <p className="text-xs">Sign in & get approved to view</p>
+                </div>
+              </div>
+            )}
             
             {/* Image Indicator Dots */}
             {images.length > 1 && (
@@ -182,24 +192,6 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             </div>
 
             {/* Quick Add Button - Show on hover at bottom of image area */}
-            <motion.div 
-              className="absolute bottom-2 left-2 right-2"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ 
-                opacity: isHovered ? 1 : 0, 
-                y: isHovered ? 0 : 20 
-              }}
-              transition={{ duration: 0.3 }}
-            >
-              <Button
-                onClick={handleAddToCart}
-                disabled={isLoading || !firstVariant?.availableForSale}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 hover:shadow-lg text-sm flex items-center justify-center"
-              >
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                {isLoading ? 'Adding...' : 'Quick Add'}
-              </Button>
-            </motion.div>
           </div>
 
           {/* Product Info */}

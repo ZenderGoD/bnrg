@@ -38,7 +38,7 @@ const Privacy = () => {
           >
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p className="text-muted-foreground leading-relaxed">
-                At <strong className="text-foreground">MONTE VELORIS</strong>, we are committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. By using our website, you consent to the data practices described in this policy.
+                At <strong className="text-foreground">TOESPRING</strong>, we are committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. By using our website, you consent to the data practices described in this policy.
               </p>
 
               <div className="mt-8 space-y-8">
@@ -183,7 +183,7 @@ const Privacy = () => {
                       <li><strong className="text-foreground">Grievance:</strong> File a complaint with our Grievance Officer (details below)</li>
                       <li><strong className="text-foreground">Data Portability:</strong> Request transfer of your data in a structured format</li>
                     </ul>
-                    <p className="mt-4">To exercise these rights, please contact us at <a href="mailto:privacy@monteveloris.com" className="text-primary hover:underline">privacy@monteveloris.com</a></p>
+                    <p className="mt-4">To exercise these rights, please contact us at <a href="mailto:privacy@toespring.com" className="text-primary hover:underline">privacy@toespring.com</a></p>
                   </div>
                 </motion.div>
 
@@ -244,7 +244,7 @@ const Privacy = () => {
                     <p>In accordance with the Information Technology Act, 2000, we have appointed a Grievance Officer:</p>
                     <div className="bg-background border border-border/30 rounded p-4 mt-4">
                       <p><strong className="text-foreground">Name:</strong> Grievance Officer</p>
-                      <p><strong className="text-foreground">Email:</strong> <a href="mailto:grievance@monteveloris.com" className="text-primary hover:underline">grievance@monteveloris.com</a></p>
+                      <p><strong className="text-foreground">Email:</strong> <a href="mailto:grievance@toespring.com" className="text-primary hover:underline">grievance@toespring.com</a></p>
                       <p><strong className="text-foreground">Response Time:</strong> Within 30 days as per IT Rules, 2011</p>
                     </div>
                   </div>
@@ -274,8 +274,8 @@ const Privacy = () => {
                   <div className="space-y-3 text-muted-foreground">
                     <p>If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</p>
                     <div className="bg-background border border-border/30 rounded p-4 mt-4">
-                      <p><strong className="text-foreground">MONTE VELORIS</strong></p>
-                      <p>Email: <a href="mailto:privacy@monteveloris.com" className="text-primary hover:underline">privacy@monteveloris.com</a></p>
+                      <p><strong className="text-foreground">TOESPRING</strong></p>
+                      <p>Email: <a href="mailto:privacy@toespring.com" className="text-primary hover:underline">privacy@toespring.com</a></p>
                       <p>Phone: +91-XXXX-XXXXXX</p>
                       <p className="mt-2">Address: [Company Address], India</p>
                     </div>

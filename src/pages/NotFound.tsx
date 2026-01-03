@@ -94,7 +94,7 @@ const NotFound = () => {
             <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
               <Link to="/catalog">
                 <Search className="mr-2 h-4 w-4" />
-                Browse Catalog
+                Browse Articles
               </Link>
             </Button>
           </motion.div>

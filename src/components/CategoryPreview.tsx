@@ -82,7 +82,7 @@ export function CategoryPreview({ category, isVisible }: CategoryPreviewProps) {
           
           {!isLoading && products.length === 0 && (
             <div className="text-center text-muted-foreground py-4">
-              <p className="text-sm">No products found</p>
+              <p className="text-sm">No articles found</p>
             </div>
           )}
         </motion.div>

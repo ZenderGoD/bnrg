@@ -19,7 +19,7 @@ const About = () => {
             <div className="mb-8 flex justify-center">
               <img
                 src="/monte-veloris-logo.png"
-                alt="MONTE VELORIS"
+                alt="TOESPRING"
                 className="h-16 sm:h-20 md:h-24 w-auto"
               />
             </div>
@@ -35,7 +35,7 @@ const About = () => {
                 Luxury footwear crafted with precision, inspired by elegance, and designed for everyday comfort.
               </p>
               <p>
-                At Monte Veloris, we believe true luxury is not just seen — it is felt with every step.
+                At Toespring, we believe true luxury is not just seen — it is felt with every step.
               </p>
             </div>
           </motion.div>
@@ -57,10 +57,10 @@ const About = () => {
             </h2>
             <div className="text-base sm:text-lg text-muted-foreground leading-relaxed space-y-4 max-w-3xl mx-auto">
               <p>
-                <strong className="text-foreground">MONTE VELORIS</strong> is a premium footwear brand born from a deep understanding of materials, craftsmanship, and the way people move. Rooted in refined design and uncompromising comfort, our footwear is thoughtfully created for those who appreciate understated luxury.
+                <strong className="text-foreground">TOESPRING</strong> is a premium footwear brand born from a deep understanding of materials, craftsmanship, and the way people move. Rooted in refined design and uncompromising comfort, our footwear is thoughtfully created for those who appreciate understated luxury.
               </p>
               <p>
-                Every pair reflects a balance of heritage-inspired aesthetics and modern comfort engineering, making Monte Veloris ideal for long days, elegant evenings, and everything in between.
+                Every pair reflects a balance of heritage-inspired aesthetics and modern comfort engineering, making Toespring ideal for long days, elegant evenings, and everything in between.
               </p>
             </div>
           </motion.div>
@@ -81,7 +81,7 @@ const About = () => {
               Designed to Walk Above
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              At Monte Veloris, luxury is never loud.
+              At Toespring, luxury is never loud.
               <br />
               It is expressed through clean lines, superior materials, and attention to detail.
             </p>
@@ -116,7 +116,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* The Monte Veloris Promise */}
+      {/* The Toespring Promise */}
       <section className="py-16 sm:py-24 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
           <motion.div
@@ -127,7 +127,7 @@ const About = () => {
             className="text-center mb-12"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 text-foreground">
-              The Monte Veloris Promise
+              The Toespring Promise
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 max-w-3xl mx-auto">
@@ -160,7 +160,7 @@ const About = () => {
                 Step into a world where elegance rises above excess.
               </p>
               <p className="text-xl sm:text-2xl font-bold text-primary">
-                Step into MONTE VELORIS.
+                Step into TOESPRING.
               </p>
             </div>
 

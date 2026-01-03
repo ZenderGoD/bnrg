@@ -50,7 +50,7 @@ export const sendPaymentNotification = internalAction({
         ],
         color: 0xffa500, // Orange
         footer: {
-          text: "MONTE VELORIS Payment System",
+          text: "TOESPRING Payment System",
         },
         timestamp: new Date().toISOString(),
       };
@@ -68,7 +68,7 @@ export const sendPaymentNotification = internalAction({
         ],
         color: 0x00ff00, // Green
         footer: {
-          text: "MONTE VELORIS Payment System",
+          text: "TOESPRING Payment System",
         },
         timestamp: new Date().toISOString(),
       };
@@ -86,7 +86,7 @@ export const sendPaymentNotification = internalAction({
         ],
         color: 0xffa500, // Orange
         footer: {
-          text: "MONTE VELORIS Payment System",
+          text: "TOESPRING Payment System",
         },
         timestamp: new Date().toISOString(),
       };
@@ -106,6 +106,62 @@ export const sendPaymentNotification = internalAction({
         console.error(`❌ Discord webhook failed: ${response.status} ${response.statusText}`, errorText);
       } else {
         console.log("✅ Discord notification sent successfully");
+      }
+    } catch (error) {
+      console.error("❌ Failed to send Discord notification:", error);
+    }
+  },
+});
+
+export const sendAuthorizationRequestNotification = internalAction({
+  args: {
+    userId: v.id("users"),
+    userEmail: v.string(),
+    userName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const webhookUrl = process.env.DISCORD_WEBHOOK_SYSTEM;
+    
+    if (!webhookUrl) {
+      console.warn("⚠️ DISCORD_WEBHOOK_SYSTEM environment variable not set. Discord notifications disabled.");
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString('en-IN', { 
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'full',
+      timeStyle: 'long'
+    });
+
+    const embed = {
+      title: "🔐 Authorization Request",
+      description: `A user has requested authorization to view locked content.`,
+      fields: [
+        { name: "User", value: args.userName || "Unknown", inline: true },
+        { name: "Email", value: args.userEmail || "Unknown", inline: true },
+        { name: "User ID", value: args.userId, inline: false },
+      ],
+      color: 0x3498db, // Blue
+      footer: {
+        text: "TOESPRING Authorization System",
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          embeds: [embed],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Discord webhook failed: ${response.status} ${response.statusText}`, errorText);
+      } else {
+        console.log("✅ Discord authorization request notification sent successfully");
       }
     } catch (error) {
       console.error("❌ Failed to send Discord notification:", error);

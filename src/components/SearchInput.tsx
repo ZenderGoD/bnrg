@@ -144,7 +144,7 @@ export function SearchInput({ isOpen, onClose }: SearchInputProps) {
 
                     {!isLoading && results.length === 0 && query.length > 2 && (
                       <div className="p-4 text-center text-muted-foreground text-sm sm:text-base">
-                        No products found for "{query}"
+                        No articles found for "{query}"
                       </div>
                     )}
 

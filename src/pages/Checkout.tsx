@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/utils';
 import { getCurrentCustomer } from '@/lib/passwordlessAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,7 @@ const PAYMENT_TIMER_MINUTES = 5;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, isLoading: cartLoading } = useCart();
+  // Cart system removed - checkout page disabled
   const customer = getCurrentCustomer();
   const { toast } = useToast();
   const [creatingOrder, setCreatingOrder] = useState(false);
@@ -273,7 +272,6 @@ export default function Checkout() {
         items: orderItems,
         totalPrice: total,
         currencyCode: currency,
-        creditsApplied: 0,
       });
 
       // Create payment record
@@ -728,11 +726,11 @@ export default function Checkout() {
                     </div>
                   )}
 
-                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-5 sm:p-6 rounded-lg">
-                    <p className="text-sm sm:text-base text-amber-900 dark:text-amber-100 font-semibold mb-3">
+                  <div className="bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-800 p-5 sm:p-6 rounded-lg">
+                    <p className="text-sm sm:text-base text-cyan-900 dark:text-cyan-100 font-semibold mb-3">
                       Payment Instructions:
                     </p>
-                    <ol className="text-sm sm:text-base text-amber-800 dark:text-amber-200 space-y-2 sm:space-y-3 list-decimal list-inside">
+                    <ol className="text-sm sm:text-base text-cyan-800 dark:text-cyan-200 space-y-2 sm:space-y-3 list-decimal list-inside">
                       <li>Fill in your shipping and billing details above</li>
                       <li>Review your order summary</li>
                       <li>Click "Proceed to Payment" to see the QR code</li>
@@ -801,11 +799,11 @@ export default function Checkout() {
                       </div>
                     </div>
 
-                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-5 sm:p-6 rounded-lg">
-                      <p className="text-sm sm:text-base text-amber-900 dark:text-amber-100 font-semibold mb-3">
+                    <div className="bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-800 p-5 sm:p-6 rounded-lg">
+                      <p className="text-sm sm:text-base text-cyan-900 dark:text-cyan-100 font-semibold mb-3">
                         Instructions:
                       </p>
-                      <ol className="text-sm sm:text-base text-amber-800 dark:text-amber-200 space-y-2 sm:space-y-3 list-decimal list-inside">
+                      <ol className="text-sm sm:text-base text-cyan-800 dark:text-cyan-200 space-y-2 sm:space-y-3 list-decimal list-inside">
                         <li>Scan the QR code with any UPI app</li>
                         <li>Or send money to the UPI ID shown above</li>
                         <li>Enter the exact amount: <strong>{formatCurrency(total, currency)}</strong></li>

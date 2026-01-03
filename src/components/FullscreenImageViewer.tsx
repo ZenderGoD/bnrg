@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Loader2, Lock } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface FullscreenImageViewerProps {
@@ -14,8 +14,10 @@ interface FullscreenImageViewerProps {
     src: string;
     alt?: string;
     title?: string;
+    locked?: boolean;
   }>;
   initialIndex?: number;
+  canViewLocked?: boolean;
 }
 
 export function FullscreenImageViewer({
@@ -26,6 +28,7 @@ export function FullscreenImageViewer({
   title,
   assets,
   initialIndex = 0,
+  canViewLocked = false,
 }: FullscreenImageViewerProps) {
   const hasCarousel: boolean = Array.isArray(assets) && assets.length > 0;
   const [currentIndex, setCurrentIndex] = useState(() => initialIndex);
@@ -145,10 +148,11 @@ export function FullscreenImageViewer({
   const active =
     hasCarousel && assets?.length
       ? assets[Math.min(Math.max(currentIndex, 0), assets.length - 1)]
-      : { src, alt, title };
+      : { src, alt, title, locked: false };
   const activeSrc = active?.src ?? '';
   const activeAlt = active?.alt ?? alt;
   const activeTitle = active?.title ?? title;
+  const isActiveLocked = active?.locked && !canViewLocked;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -323,6 +327,7 @@ export function FullscreenImageViewer({
               key={`${activeSrc}-${currentIndex}`}
               src={activeSrc}
               alt={activeAlt}
+              isLocked={isActiveLocked}
             />
           )}
         </div>
@@ -334,9 +339,10 @@ export function FullscreenImageViewer({
 interface ZoomableImageProps {
   src: string;
   alt: string;
+  isLocked?: boolean;
 }
 
-function ZoomableImage({ src, alt }: ZoomableImageProps) {
+function ZoomableImage({ src, alt, isLocked = false }: ZoomableImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -615,26 +621,38 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
         </div>
       )}
 
-      <img
-        key={src}
-        ref={imageRef}
-        src={src}
-        alt={alt}
-        draggable={false}
-        onLoad={handleFullImageLoad}
-        onError={handleFullImageError}
-        className={cn(
-          'max-h-[90vh] max-w-[90vw] object-contain transition-opacity duration-200',
-          fullImageLoaded
-            ? 'visible opacity-100'
-            : 'pointer-events-none invisible opacity-0'
+      <div className="relative">
+        <img
+          key={src}
+          ref={imageRef}
+          src={src}
+          alt={alt}
+          draggable={false}
+          onLoad={handleFullImageLoad}
+          onError={handleFullImageError}
+          className={cn(
+            'max-h-[90vh] max-w-[90vw] object-contain transition-opacity duration-200',
+            fullImageLoaded
+              ? 'visible opacity-100'
+              : 'pointer-events-none invisible opacity-0',
+            isLocked && 'blur-2xl'
+          )}
+          style={{
+            transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
+            transition: isPanning ? 'none' : 'transform 60ms ease-out',
+            willChange: 'transform',
+          }}
+        />
+        {isLocked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20 pointer-events-none">
+            <div className="text-center text-white p-8 max-w-md">
+              <Lock className="h-16 w-16 mx-auto mb-4" />
+              <p className="text-lg font-medium mb-2">This image is locked</p>
+              <p className="text-sm">Sign in & get approved by admin to view</p>
+            </div>
+          </div>
         )}
-        style={{
-          transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
-          transition: isPanning ? 'none' : 'transform 60ms ease-out',
-          willChange: 'transform',
-        }}
-      />
+      </div>
 
       {isLoading && (
         <div className="fixed top-4 left-1/2 z-[101] flex -translate-x-1/2 items-center gap-1.5 rounded-lg border border-white/20 bg-black/70 px-2.5 py-1.5 text-xs text-white backdrop-blur-sm">

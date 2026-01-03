@@ -208,7 +208,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
                           onClick={() => { navigate('/catalog'); onClose(); }}
                           className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <span className="text-sm text-foreground">All Products</span>
+                          <span className="text-sm text-foreground">All Articles</span>
                         </button>
                         <button
                           onClick={() => { navigate('/men'); onClose(); }}

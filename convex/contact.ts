@@ -44,7 +44,7 @@ export const sendContactMessage = action({
         },
       ],
       footer: {
-        text: "MONTE VELORIS Contact Form",
+        text: "TOESPRING Contact Form",
       },
     };
 

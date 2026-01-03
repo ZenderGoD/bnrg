@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // Products table
+  // Articles table
   products: defineTable({
     title: v.string(),
     description: v.string(),
@@ -13,6 +13,7 @@ export default defineSchema({
     images: v.array(v.object({
       url: v.string(),
       altText: v.optional(v.string()),
+      locked: v.optional(v.boolean()), // If true, image is locked and requires approval to view
     })),
     variants: v.array(v.object({
       id: v.string(),
@@ -50,9 +51,8 @@ export default defineSchema({
     acceptsMarketing: v.boolean(),
     passwordHash: v.string(), // For authentication
     role: v.optional(v.union(v.literal("customer"), v.literal("admin"), v.literal("manager"))), // User role (defaults to "customer")
-    creditsBalance: v.number(), // MONTEVELORIS credits balance
-    creditsEarned: v.number(), // Total credits earned
-    creditsPending: v.number(), // Pending credits
+    isApproved: v.optional(v.boolean()), // If true, user can view locked content
+    authorizationRequestedAt: v.optional(v.number()), // Timestamp when user requested authorization
     // Address fields
     address: v.optional(v.string()),
     apartment: v.optional(v.string()),
@@ -98,15 +98,13 @@ export default defineSchema({
     currencyCode: v.string(),
     fulfillmentStatus: v.string(), // "unfulfilled", "fulfilled", "partial"
     financialStatus: v.string(), // "pending", "paid", "refunded"
-    creditsEarned: v.number(), // Credits earned from this order
-    creditsApplied: v.number(), // Credits used in this order
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
     .index("by_order_number", ["orderNumber"]),
 
-  // Credit transactions table
+  // Credit transactions table (deprecated - not used)
   creditTransactions: defineTable({
     userId: v.id("users"),
     amount: v.number(),
@@ -125,7 +123,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_order", ["orderId"]),
 
-  // Gift cards / Shareable coupons (for credits system)
+  // Gift cards / Shareable coupons
   giftCards: defineTable({
     code: v.string(),
     amount: v.number(),

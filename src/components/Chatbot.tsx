@@ -116,7 +116,7 @@ export function Chatbot() {
               "hover:scale-110 active:scale-95",
               "group relative overflow-hidden"
             )}
-            aria-label="Open MONTEVELORIS Assistant"
+            aria-label="Open TOESPRING Assistant"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <MessageCircle className="h-6 w-6 relative z-10" />
@@ -159,7 +159,7 @@ export function Chatbot() {
                     </div>
                     <div>
                       <h3 className="font-bold text-foreground flex items-center gap-2">
-                        MONTEVELORIS Assistant
+                        TOESPRING Assistant
                         <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                       </h3>
                       <div className="text-xs text-muted-foreground/80 font-medium">
@@ -219,7 +219,7 @@ export function Chatbot() {
                           </div>
                         </div>
                         <h4 className="font-bold text-lg mb-3 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                          Welcome to MONTEVELORIS!
+                          Welcome to TOESPRING!
                         </h4>
                         <p className="text-sm text-muted-foreground/90 max-w-xs mx-auto leading-relaxed mb-5">
                           I'm your AI shopping assistant. Ask me about footwear, sizes, orders, or anything else!

@@ -1,4 +1,4 @@
-// Convex API integration for MONTEVELORIS footwear store
+// Convex API integration for TOESPRING footwear store
 import { ConvexReactClient } from "convex/react";
 // Import Convex generated API
 import { api } from "../../convex/_generated/api";
@@ -20,6 +20,7 @@ export interface Product {
   images: Array<{
     url: string;
     altText?: string;
+    locked?: boolean;
   }>;
   variants: Array<{
     id: string;
@@ -49,9 +50,8 @@ export interface User {
   phone?: string;
   acceptsMarketing: boolean;
   role?: "customer" | "admin" | "manager";
-  creditsBalance: number;
-  creditsEarned: number;
-  creditsPending: number;
+  isApproved?: boolean; // If true, user can view locked content
+  authorizationRequestedAt?: number; // Timestamp when user requested authorization
   address?: string;
   apartment?: string;
   city?: string;
@@ -62,17 +62,6 @@ export interface User {
   updatedAt?: number;
 }
 
-export interface Cart {
-  _id: string;
-  userId?: string;
-  sessionId?: string;
-  items: Array<{
-    productId: string;
-    variantId: string;
-    quantity: number;
-    price: number;
-  }>;
-}
 
 export interface Order {
   _id: string;
@@ -90,21 +79,8 @@ export interface Order {
   currencyCode: string;
   fulfillmentStatus: string;
   financialStatus: string;
-  creditsEarned: number;
-  creditsApplied: number;
   createdAt: number;
   updatedAt?: number;
-}
-
-export interface CreditTransaction {
-  _id: string;
-  userId: string;
-  amount: number;
-  type: "earned" | "spent" | "shared" | "received" | "refund";
-  description: string;
-  orderId?: string;
-  status: "pending" | "completed";
-  createdAt: number;
 }
 
 // Helper to hash password (client-side, in production use proper hashing)
@@ -190,6 +166,17 @@ export const users = {
       throw new Error(message);
     }
   },
+  
+  requestAuthorization: async (id: string) => {
+    try {
+      return await convex.mutation(api.users.requestAuthorization, {
+        id: id as Id<"users">,
+      });
+    } catch (error: unknown) {
+      const message = sanitizeConvexError(error);
+      throw new Error(message);
+    }
+  },
 };
 
 // Auth API
@@ -244,53 +231,6 @@ export const auth = {
   },
 };
 
-// Cart API
-export const cart = {
-  getByUserId: (userId: string) => {
-    return convex.query(api.cart.getByUserId, { userId: userId as Id<"users"> });
-  },
-  
-  getBySessionId: (sessionId: string) => {
-    return convex.query(api.cart.getBySessionId, { sessionId });
-  },
-  
-  getOrCreate: (userId?: string, sessionId?: string) => {
-    return convex.mutation(api.cart.getOrCreate, {
-      userId: userId ? (userId as Id<"users">) : undefined,
-      sessionId,
-    });
-  },
-  
-  addItem: (cartId: string, productId: string, variantId: string, quantity: number) => {
-    return convex.mutation(api.cart.addItem, {
-      cartId: cartId as Id<"carts">,
-      productId: productId as Id<"products">,
-      variantId,
-      quantity,
-    });
-  },
-  
-  updateItemQuantity: (cartId: string, productId: string, variantId: string, quantity: number) => {
-    return convex.mutation(api.cart.updateItemQuantity, {
-      cartId: cartId as Id<"carts">,
-      productId: productId as Id<"products">,
-      variantId,
-      quantity,
-    });
-  },
-  
-  removeItem: (cartId: string, productId: string, variantId: string) => {
-    return convex.mutation(api.cart.removeItem, {
-      cartId: cartId as Id<"carts">,
-      productId: productId as Id<"products">,
-      variantId,
-    });
-  },
-  
-  clear: (cartId: string) => {
-    return convex.mutation(api.cart.clear, { cartId: cartId as Id<"carts"> });
-  },
-};
 
 // Orders API
 export const orders = {
@@ -314,7 +254,6 @@ export const orders = {
     }>;
     totalPrice: number;
     currencyCode: string;
-    creditsApplied: number;
   }) => {
     return convex.mutation(api.orders.create, {
       userId: data.userId as Id<"users">,
@@ -324,35 +263,10 @@ export const orders = {
       })),
       totalPrice: data.totalPrice,
       currencyCode: data.currencyCode,
-      creditsApplied: data.creditsApplied,
     });
   },
 };
 
-// Credits API
-export const credits = {
-  getByUserId: (userId: string) => {
-    return convex.query(api.credits.getByUserId, { userId: userId as Id<"users"> });
-  },
-  
-  getTransactions: (userId: string) => {
-    return convex.query(api.credits.getTransactions, { userId: userId as Id<"users"> });
-  },
-  
-  share: (userId: string, amount: number) => {
-    return convex.mutation(api.credits.share, {
-      userId: userId as Id<"users">,
-      amount,
-    });
-  },
-  
-  redeemGiftCard: (userId: string, code: string) => {
-    return convex.mutation(api.credits.redeemGiftCard, {
-      userId: userId as Id<"users">,
-      code,
-    });
-  },
-};
 
 // Payments API
 export const payments = {

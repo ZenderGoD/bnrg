@@ -137,12 +137,11 @@ const Index = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
-              About MONTEVELORIS
+              About TOESPRING
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg max-w-3xl mx-auto">
-              MONTE VELORIS creates premium footwear defined by elegance, comfort, and timeless design. 
-              Crafted with care and designed to move beautifully, our footwear is made for those who value 
-              refined simplicity and lasting quality.
+            At Toespring, we design and document the foundation of footwear <br />
+            from schematics to production-ready systems.
             </p>
           </div>
 
@@ -267,11 +266,11 @@ const Index = () => {
         </div>
       </motion.section>
 
-      {/* Featured Products */}
+      {/* Featured Articles */}
       <ProductGrid
         products={products}
         isLoading={isLoading}
-        title="Featured Products"
+        title="Featured Articles"
         subtitle="Discover our latest collection of premium footwear"
         onLoadMore={handleLoadMore}
         hasMore={hasMore}
@@ -290,7 +289,7 @@ const Index = () => {
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        {/* Animated Gradient Background - Amber and Black theme */}
+        {/* Animated Gradient Background - Cyan and Black theme */}
         <motion.div 
           className="absolute inset-0"
           animate={{
@@ -331,14 +330,14 @@ const Index = () => {
           style={{
             backgroundImage: `linear-gradient(
             to top, 
-            #000000 0%, 
-            rgba(0, 0, 0, 0.95) 
-            10%, rgba(0, 0, 0, 0.85) 20%, 
-            rgba(0, 0, 0, 0.7) 30%, 
-            rgba(0, 0, 0, 0.5) 45%, 
-            rgba(0, 0, 0, 0.3) 60%, 
-            rgba(0, 0, 0, 0.15) 75%, 
-            rgba(0, 0, 0, 0.05) 90%, 
+            #06b6d4 0%, 
+            rgba(6, 182, 212, 0.95) 
+            10%, rgba(6, 182, 212, 0.85) 20%, 
+            rgba(6, 182, 212, 0.7) 30%, 
+            rgba(6, 182, 212, 0.5) 45%, 
+            rgba(6, 182, 212, 0.3) 60%, 
+            rgba(6, 182, 212, 0.15) 75%, 
+            rgba(6, 182, 212, 0.05) 90%, 
             transparent 100%)`
           }}
         />
@@ -425,7 +424,7 @@ const Index = () => {
                         ))
                       ) : (
                         <div className="col-span-4 text-center text-muted-foreground py-8">
-                          No products found for this collection
+                          No articles found for this collection
                         </div>
                       )}
                     </div>

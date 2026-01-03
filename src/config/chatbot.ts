@@ -57,7 +57,7 @@ export const CHATBOT_CONFIG = {
 
   // Default messages
   messages: {
-    welcome: "Hey! I'm your MONTEVELORIS shopping assistant. Ask me about products, sizes, orders, or anything else!",
+    welcome: "Hey! I'm your TOESPRING shopping assistant. Ask me about products, sizes, orders, or anything else!",
     offline: "I'm currently offline, but I'll help you as soon as I'm back online!",
     error: "I'm sorry, I'm having trouble right now. Please try again in a moment.",
     typing: "Typing...",

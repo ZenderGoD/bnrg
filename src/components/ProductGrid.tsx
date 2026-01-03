@@ -39,9 +39,9 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-amber-600 mb-4">No Products Found</h2>
-            <p className="text-gray-900 dark:text-amber-600 max-w-md mx-auto">
-              We couldn't find any products at the moment. Please check back later or explore other categories.
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-cyan-500 mb-4">No Articles Found</h2>
+            <p className="text-gray-900 dark:text-cyan-500 max-w-md mx-auto">
+              We couldn't find any articles at the moment. Please check back later or explore other categories.
             </p>
           </motion.div>
         </div>
@@ -59,11 +59,11 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-amber-600 mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-cyan-500 mb-4">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-gray-900 dark:text-amber-600 text-lg max-w-3xl mx-auto">
+              <p className="text-gray-900 dark:text-cyan-500 text-lg max-w-3xl mx-auto">
                 {subtitle}
               </p>
             )}
@@ -116,7 +116,7 @@ export function ProductGrid({ products, isLoading, title, subtitle, onLoadMore, 
                   Loading...
                 </span>
               ) : (
-                'Load More Products'
+                'Load More Articles'
               )}
             </InteractiveHoverButton>
           </motion.div>

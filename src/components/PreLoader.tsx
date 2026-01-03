@@ -31,14 +31,14 @@ export function PreLoader({ onComplete }: PreLoaderProps) {
       transition={{ duration: 0.5 }}
     >
       <div className="text-center">
-        {/* BNRG Logo Animation */}
+        {/* TOESPRING Logo Animation */}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="mb-8"
         >
-          <h1 className="text-6xl md:text-8xl font-bold gradient-text">MONTEVELORIS</h1>
+          <h1 className="text-6xl md:text-8xl font-bold gradient-text">TOESPRING</h1>
           <p className="text-muted-foreground text-lg mt-2">Premium Footwear</p>
         </motion.div>
 

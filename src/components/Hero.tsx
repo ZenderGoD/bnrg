@@ -22,7 +22,7 @@ export function Hero() {
     : [];
 
   const MarqueeImage = ({ imageUrl, index }: { imageUrl: string; index: number }) => (
-    <div className="flex-shrink-0 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-lg overflow-hidden border border-border/30 bg-muted/10">
+    <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-lg overflow-hidden border border-border/30 bg-muted/10 mb-4">
       <img
         src={imageUrl}
         alt={`Marquee ${index}`}
@@ -36,22 +36,27 @@ export function Hero() {
       {/* Background */}
       <div className="absolute inset-0 bg-[#022c22] dark:bg-black" />
 
-      {/* Hero Content - Centered */}
-      <div className="flex-1 flex flex-col items-center justify-center z-10 px-4 sm:px-8">
-        {/* Top Marquee Row */}
+      {/* Hero Content - With Vertical Marquees */}
+      <div className="flex-1 flex flex-row items-center justify-center z-10 px-4 sm:px-8 relative">
+        {/* Left Vertical Marquee */}
         {normalizedTopImages.length > 0 && (
-          <div className="w-full mb-8">
-            <Marquee pauseOnHover className="[--duration:40s] [--gap:2rem]" repeat={3}>
-              {normalizedTopImages.map((imageUrl, i) => (
-                <MarqueeImage key={`top-${i}`} imageUrl={imageUrl} index={i} />
-              ))}
-            </Marquee>
+          <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-48 overflow-hidden">
+            <div className="h-full flex items-center">
+              <Marquee pauseOnHover vertical className="[--duration:40s] [--gap:1rem]" repeat={3}>
+                {normalizedTopImages.map((imageUrl, i) => (
+                  <MarqueeImage key={`left-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+            </div>
+            {/* Gradient fade at top and bottom */}
+            <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-[#022c22] dark:from-black pointer-events-none z-10"></div>
+            <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#022c22] dark:from-black pointer-events-none z-10"></div>
           </div>
         )}
 
-        {/* Hero Text Content */}
+        {/* Hero Text Content - Centered */}
         <motion.div
-          className="text-center max-w-4xl"
+          className="text-center max-w-4xl z-10 flex-shrink-0"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -69,10 +74,10 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <p>
-              Luxury footwear crafted with precision, inspired by elegance, and designed for everyday comfort.
+              Precision sole engineering for contemporary footwear.
             </p>
             <p>
-              At Monte Veloris, we believe true luxury is not just seen — it is felt with every step.
+              Developed through discipline, material science, and decades of manufacturing experience.
             </p>
           </motion.div>
 
@@ -83,24 +88,29 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/women">
+              <Link to="/catalog">
                 <Button className="btn-ghost-premium w-full sm:w-auto text-sm sm:text-base px-6 py-3 sm:py-4">
                   <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-[#3c6a42]" />
-                  Women's Collection
+                  View Collections
                 </Button>
               </Link>
             </motion.div>
           </motion.div>
         </motion.div>
 
-        {/* Bottom Marquee Row */}
+        {/* Right Vertical Marquee */}
         {normalizedBottomImages.length > 0 && (
-          <div className="w-full mt-8">
-            <Marquee reverse pauseOnHover className="[--duration:40s] [--gap:2rem]" repeat={3}>
-              {normalizedBottomImages.map((imageUrl, i) => (
-                <MarqueeImage key={`bottom-${i}`} imageUrl={imageUrl} index={i} />
-              ))}
-            </Marquee>
+          <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-48 overflow-hidden">
+            <div className="h-full flex items-center">
+              <Marquee reverse pauseOnHover vertical className="[--duration:40s] [--gap:1rem]" repeat={3}>
+                {normalizedBottomImages.map((imageUrl, i) => (
+                  <MarqueeImage key={`right-${i}`} imageUrl={imageUrl} index={i} />
+                ))}
+              </Marquee>
+            </div>
+            {/* Gradient fade at top and bottom */}
+            <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-[#022c22] dark:from-black pointer-events-none z-10"></div>
+            <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#022c22] dark:from-black pointer-events-none z-10"></div>
           </div>
         )}
       </div>

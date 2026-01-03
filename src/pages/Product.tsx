@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Heart, ArrowLeft, Share, ZoomIn, ChevronLeft, ChevronRight, Star, ShieldCheck, Truck, RotateCcw, ChevronDown, ChevronUp, Ruler, Plus, Minus } from 'lucide-react';
+import { Heart, ArrowLeft, Share, Star, ShieldCheck, Truck, RotateCcw, ChevronDown, ChevronUp, Ruler, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { getProduct, ShopifyProduct, getAllProducts, isCustomerLoggedIn, getCustomerToken } from '@/lib/shopify';
-import { useCart } from '@/contexts/CartContext';
+import { getProduct, ShopifyProduct, getAllProducts, isCustomerLoggedIn, getCustomerToken, canViewLockedContent } from '@/lib/shopify';
+import { users, auth } from '@/lib/api';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { ProductGrid } from '@/components/ProductGrid';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Lock } from 'lucide-react';
+import Masonry from '@/components/ui/masonry';
+import { FullscreenImageViewer } from '@/components/FullscreenImageViewer';
 
 export default function Product() {
   const { handle } = useParams<{ handle: string }>();
@@ -20,17 +24,18 @@ export default function Product() {
   const [relatedProducts, setRelatedProducts] = useState<ShopifyProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<string>('');
-  const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColorVariant, setSelectedColorVariant] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedSizes, setSelectedSizes] = useState<Array<{ index: number; variantId: string }>>([{ index: 0, variantId: '' }]);
   const [isLiked, setIsLiked] = useState(false);
-  const [isZoomMode, setIsZoomMode] = useState(false);
-  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [showSizeGuide, setShowSizeGuide] = useState(false);
-  const { addToCart, isLoading: cartLoading } = useCart();
+  const [canViewLocked, setCanViewLocked] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  // Cart system removed
   const { toast } = useToast();
 
   const handleBackNavigation = () => {
@@ -50,8 +55,30 @@ export default function Product() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Initialize liked state
+  // Initialize liked state and check approval
   useEffect(() => {
+    setIsLoggedIn(isCustomerLoggedIn());
+    canViewLockedContent().then(setCanViewLocked);
+    
+    // Check rate limit
+    const checkRateLimit = () => {
+      const lastRequestTime = localStorage.getItem('authorization_request_timestamp');
+      if (lastRequestTime) {
+        const lastRequest = parseInt(lastRequestTime, 10);
+        const now = Date.now();
+        const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        const timeSinceLastRequest = now - lastRequest;
+        
+        if (timeSinceLastRequest < oneDayInMs) {
+          setIsRateLimited(true);
+          return;
+        }
+      }
+      setIsRateLimited(false);
+    };
+    
+    checkRateLimit();
+    
     if (!product || !isCustomerLoggedIn()) return;
     
     const customerId = getCustomerToken()?.accessToken;
@@ -147,12 +174,6 @@ export default function Product() {
     }));
   };
 
-  const handleImageHover = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomPosition({ x, y });
-  };
 
   const toggleLike = () => {
     if (!isCustomerLoggedIn()) {
@@ -190,6 +211,60 @@ export default function Product() {
     localStorage.setItem(likedKey, JSON.stringify(currentLiked));
   };
 
+  const handleRequestAuthorization = async () => {
+    // Check if rate limited
+    const lastRequestTime = localStorage.getItem('authorization_request_timestamp');
+    if (lastRequestTime) {
+      const lastRequest = parseInt(lastRequestTime, 10);
+      const now = Date.now();
+      const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      const timeSinceLastRequest = now - lastRequest;
+      
+      if (timeSinceLastRequest < oneDayInMs) {
+        const hoursRemaining = Math.ceil((oneDayInMs - timeSinceLastRequest) / (60 * 60 * 1000));
+        toast({
+          title: "Request Already Sent",
+          description: `You can only request authorization once per day. Please try again in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}.`,
+          variant: "default",
+        });
+        return;
+      }
+    }
+    
+    // Get user ID
+    const userId = auth.getUserId();
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please sign in to request authorization.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Call the mutation to update user and send Discord notification
+      await users.requestAuthorization(userId);
+      
+      // Set rate limit timestamp
+      localStorage.setItem('authorization_request_timestamp', Date.now().toString());
+      setIsRateLimited(true);
+      
+      toast({
+        title: "Authorization Request",
+        description: "Your request has been noted. An admin will review and approve your access soon.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Failed to request authorization:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send authorization request. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAddToCart = async () => {
     // Check if user is logged in
     if (!isCustomerLoggedIn()) {
@@ -213,16 +288,10 @@ export default function Product() {
       return;
     }
     
-    // Add each item to cart
-    for (const sizeSelection of selectedSizes) {
-      if (sizeSelection.variantId) {
-        await addToCart(sizeSelection.variantId, 1);
-      }
-    }
-    
+    // Cart system removed
     toast({
-      title: "Added to cart",
-      description: `${quantity} item(s) added to your cart.`,
+      title: "Cart system removed",
+      description: `Cart functionality has been removed from this project.`,
     });
   };
 
@@ -304,481 +373,91 @@ export default function Product() {
             </Button>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-          {/* Left - Image Gallery */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-4"
-          >
-            {/* Main Image with Enhanced Zoom */}
-            <div className="relative group">
-              <div 
-                className="aspect-square overflow-hidden bg-muted cursor-zoom-in relative"
-                onMouseEnter={() => setIsZoomMode(true)}
-                onMouseLeave={() => setIsZoomMode(false)}
-                onMouseMove={handleImageHover}
-              >
-                <img
-                  src={images[selectedImage]?.node.url || '/placeholder.svg'}
-                  alt={images[selectedImage]?.node.altText || product.title}
-                  className={`h-full w-full object-cover transition-all duration-300 ${
-                    isZoomMode ? 'scale-150' : 'group-hover:scale-110'
-                  }`}
-                  style={{
-                    transformOrigin: isZoomMode ? `${zoomPosition.x}% ${zoomPosition.y}%` : 'center'
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.svg';
-                  }}
-                />
+        {/* Masonry Layout with Title/Description Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full"
+        >
+          <Masonry
+            items={[
+              // Title and Description Card (first item)
+              {
+                id: 'product-info',
+                type: 'text' as const,
+                title: product.title,
+                description: product.description,
+                tags: product.tags,
+                height: Math.max(
+                  400, 
+                  200 + (product.description?.length || 0) / 10 + (product.tags?.length || 0) * 30 + 
+                  (isLoggedIn && !canViewLocked ? 80 : 0) // Extra height for button if shown
+                ), // Dynamic height based on content
+                onLikeClick: toggleLike,
+                isLiked: isLiked,
+              },
+              // Image items
+              ...images.map((image, index) => {
+                // Create varied heights for masonry effect (300-600px range)
+                const heightVariations = [400, 500, 350, 600, 450, 550, 380, 520];
+                const height = heightVariations[index % heightVariations.length];
                 
-                {/* Zoom Indicator */}
-                {isZoomMode && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div
-                      className="absolute w-32 h-32 border-2 border-white/50 bg-black/20 rounded-full"
-                      style={{
-                        left: `${zoomPosition.x}%`,
-                        top: `${zoomPosition.y}%`,
-                        transform: 'translate(-50%, -50%)'
-                      }}
-                    />
-                  </div>
-                )}
-                
-                {/* Zoom Button */}
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
-                  onClick={() => setIsZoomMode(!isZoomMode)}
-                >
-                  <ZoomIn className="h-4 w-4 text-foreground" />
-                </Button>
-              </div>
-            </div>
+                return {
+                  id: image.node.id || `image-${index}`,
+                  type: 'image' as const,
+                  img: image.node.url,
+                  altText: image.node.altText || `${product.title} view ${index + 1}`,
+                  height: height,
+                  locked: image.node.locked || false,
+                };
+              })
+            ]}
+            ease="power3.out"
+            duration={0.6}
+            stagger={0.05}
+            animateFrom="bottom"
+            scaleOnHover={true}
+            hoverScale={0.95}
+            blurToFocus={true}
+            colorShiftOnHover={false}
+            canViewLocked={canViewLocked}
+            isLoggedIn={isLoggedIn}
+            isRateLimited={isRateLimited}
+            onRequestAuthorization={handleRequestAuthorization}
+            onItemClick={(item) => {
+              // Only open viewer for image items, not text cards
+              if (item.type === 'image' && item.img) {
+                const imageIndex = images.findIndex(img => 
+                  img.node.id === item.id || img.node.url === item.img
+                );
+                if (imageIndex >= 0) {
+                  setSelectedImageIndex(imageIndex);
+                  setIsViewerOpen(true);
+                }
+              }
+            }}
+          />
+        </motion.div>
 
-            {/* Thumbnail Images */}
-            {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {images.map((image, index) => (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`flex-shrink-0 w-20 h-20 cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                      selectedImage === index 
-                        ? 'border-primary ring-2 ring-primary/20' 
-                        : 'border-transparent hover:border-muted-foreground/30'
-                    }`}
-                    onClick={() => setSelectedImage(index)}
-                  >
-                    <img
-                      src={image.node.url}
-                      alt={`${product.title} view ${index + 1}`}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Image Navigation Arrows */}
-            {images.length > 1 && (
-              <div className="flex justify-between items-center mt-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setSelectedImage(selectedImage === 0 ? images.length - 1 : selectedImage - 1)}
-                  className="rounded-full"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  {selectedImage + 1} / {images.length}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setSelectedImage(selectedImage === images.length - 1 ? 0 : selectedImage + 1)}
-                  className="rounded-full"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Right - Product Details */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-6"
-          >
-            {/* Product Header */}
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">New</Badge>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm text-muted-foreground">No reviews yet</span>
-                    </div>
-                  </div>
-                  <h1 className="text-3xl font-bold">{product.title}</h1>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <p className="text-2xl font-semibold">₹{price.toFixed(2)}</p>
-                      {mrp && mrp > price && (
-                        <>
-                          <p className="text-lg text-muted-foreground line-through">₹{mrp.toFixed(2)}</p>
-                          <Badge className="bg-green-600 text-white">{discountPercentage}% OFF</Badge>
-                        </>
-                      )}
-                    </div>
-                    {mrp && mrp > price && (
-                      <p className="text-sm text-muted-foreground">MRP: ₹{mrp.toFixed(2)}</p>
-                    )}
-                    <p className="text-sm text-muted-foreground">Inclusive of all taxes</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleLike}
-                  className={isLiked ? 'text-red-500' : 'text-muted-foreground'}
-                >
-                  <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
-                </Button>
-              </div>
-
-              {/* Product Description */}
-              <div className="space-y-2">
-                <div className="text-muted-foreground leading-relaxed">
-                  {/* Mobile: Show truncated text with read more */}
-                  <div className="block md:hidden">
-                    <p>
-                      {isDescriptionExpanded 
-                        ? product.description 
-                        : truncateText(product.description, 150)
-                      }
-                    </p>
-                    {product.description.length > 150 && (
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto text-primary font-medium mt-2"
-                        onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                      >
-                        {isDescriptionExpanded ? (
-                          <span className="flex items-center gap-1">
-                            Read less <ChevronUp className="h-4 w-4" />
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            Read more <ChevronDown className="h-4 w-4" />
-                          </span>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Desktop: Show full text */}
-                  <div className="hidden md:block">
-                    <p>{product.description}</p>
-                  </div>
-                </div>
-                
-                {product.tags && product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {product.tags.map(tag => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Quantity Selection */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Quantity</h3>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border rounded-md">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center font-medium">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={quantity >= 10}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Color Selection */}
-            {colorVariants.length > 1 && (
-              <div className="space-y-4">
-                <h3 className="font-medium">Colors</h3>
-                <div className="flex gap-3">
-                  {colorVariants.map((colorGroup, index) => (
-                    <motion.div
-                      key={colorGroup.color}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                        colorGroup.variants.some(v => v.id === selectedColorVariant)
-                          ? 'border-primary ring-2 ring-primary/20'
-                          : 'border-transparent hover:border-muted-foreground/30'
-                      }`}
-                      onClick={() => {
-                        const firstVariant = colorGroup.variants[0];
-                        setSelectedColorVariant(firstVariant.id);
-                        setSelectedVariant(firstVariant.id);
-                        setSelectedSize(firstVariant.id);
-                      }}
-                    >
-                      <div className="w-16 h-16">
-                        <img
-                          src={colorGroup.image}
-                          alt={`${product.title} in ${colorGroup.color}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 text-center">
-                        {colorGroup.color}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Size Selection */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Shoe Sizes (UK)</h3>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="link" className="text-sm p-0 h-auto hover:text-primary">
-                      <Ruler className="h-4 w-4 mr-1" />
-                      Size Guide
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <Ruler className="h-5 w-5" />
-                        Size Guide
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-                      <div className="text-sm text-muted-foreground">
-                        <p className="mb-3">Find your perfect fit with our size guide:</p>
-                      </div>
-                      
-                      {/* Size Chart */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 font-medium">UK Size</th>
-                              <th className="text-left py-2 font-medium">EU Size</th>
-                              <th className="text-left py-2 font-medium">CM</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-muted-foreground">
-                            {[
-                              { uk: '3', eu: '35.5', cm: '22' },
-                              { uk: '3.5', eu: '36', cm: '22.5' },
-                              { uk: '4', eu: '36.5', cm: '23' },
-                              { uk: '4.5', eu: '37', cm: '23.5' },
-                              { uk: '5', eu: '37.5', cm: '24' },
-                              { uk: '5.5', eu: '38', cm: '24.5' },
-                              { uk: '6', eu: '38.5', cm: '25' },
-                              { uk: '6.5', eu: '39', cm: '25.5' },
-                              { uk: '7', eu: '39.5', cm: '26' },
-                              { uk: '7.5', eu: '40', cm: '26.5' },
-                              { uk: '8', eu: '40.5', cm: '27' },
-                              { uk: '8.5', eu: '41', cm: '27.5' },
-                              { uk: '9', eu: '42', cm: '28' },
-                              { uk: '9.5', eu: '42.5', cm: '28.5' },
-                              { uk: '10', eu: '43', cm: '29' },
-                              { uk: '10.5', eu: '43.5', cm: '29.5' },
-                              { uk: '11', eu: '44', cm: '30' },
-                              { uk: '11.5', eu: '44.5', cm: '30.5' },
-                              { uk: '12', eu: '45', cm: '31' }
-                            ].map((size) => (
-                              <tr key={size.uk} className="border-b border-border/50">
-                                <td className="py-2">{size.uk}</td>
-                                <td className="py-2">{size.eu}</td>
-                                <td className="py-2">{size.cm}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      {/* Measurement Instructions */}
-                      <div className="bg-muted/30 p-4 rounded-lg space-y-2">
-                        <h4 className="font-medium text-sm">How to measure:</h4>
-                        <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                          <li>Place your foot on a piece of paper</li>
-                          <li>Mark the longest point of your foot</li>
-                          <li>Measure the distance from heel to toe</li>
-                          <li>Use the CM measurement to find your size</li>
-                        </ol>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        <p className="flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" />
-                          Still unsure? We recommend ordering your usual size.
-                        </p>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              {quantity === 1 ? (
-                <>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                    {sizeOptions.map((sizeOption) => (
-                      <button
-                        key={sizeOption.id}
-                        type="button"
-                        className={`px-4 py-2 rounded-md border-2 transition-all ${
-                          !sizeOption.available 
-                            ? 'opacity-50 cursor-not-allowed line-through border-border text-muted-foreground' 
-                            : selectedSize === sizeOption.id 
-                              ? 'bg-primary text-primary-foreground border-primary' 
-                              : 'border-border hover:border-primary hover:text-primary'
-                        }`}
-                        onClick={() => {
-                          if (sizeOption.available) {
-                            setSelectedSize(sizeOption.id);
-                            setSelectedVariant(sizeOption.id);
-                            setSelectedSizes([{ index: 0, variantId: sizeOption.id }]);
-                          }
-                        }}
-                        disabled={!sizeOption.available}
-                      >
-                        {sizeOption.size}
-                      </button>
-                    ))}
-                  </div>
-                  {selectedSize && (
-                    <p className="text-sm text-muted-foreground">
-                      <ShieldCheck className="inline h-4 w-4 mr-1" />
-                      True to size. We recommend ordering your usual size.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <div className="space-y-4">
-                  {Array.from({ length: quantity }).map((_, idx) => {
-                    const currentSelection = selectedSizes[idx] || { index: idx, variantId: '' };
-                    return (
-                      <div key={idx} className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Item {idx + 1} - Select Size:
-                        </label>
-                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                          {sizeOptions.map((sizeOption) => (
-                            <button
-                              key={sizeOption.id}
-                              type="button"
-                              className={`px-4 py-2 rounded-md border-2 transition-all text-sm ${
-                                !sizeOption.available 
-                                  ? 'opacity-50 cursor-not-allowed line-through border-border text-muted-foreground' 
-                                  : currentSelection.variantId === sizeOption.id 
-                                    ? 'bg-primary text-primary-foreground border-primary' 
-                                    : 'border-border hover:border-primary hover:text-primary'
-                              }`}
-                              onClick={() => {
-                                if (sizeOption.available) {
-                                  const newSelectedSizes = [...selectedSizes];
-                                  newSelectedSizes[idx] = { index: idx, variantId: sizeOption.id };
-                                  setSelectedSizes(newSelectedSizes);
-                                  if (idx === 0) {
-                                    setSelectedSize(sizeOption.id);
-                                    setSelectedVariant(sizeOption.id);
-                                  }
-                                }
-                              }}
-                              disabled={!sizeOption.available}
-                            >
-                              {sizeOption.size}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {selectedSizes.every(s => s.variantId) && (
-                    <p className="text-sm text-muted-foreground">
-                      <ShieldCheck className="inline h-4 w-4 mr-1" />
-                      True to size. We recommend ordering your usual size.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Add to Cart */}
-            <div className="space-y-4">
-              <Button
-                onClick={handleAddToCart}
-                disabled={cartLoading || (quantity === 1 ? !selectedSize : selectedSizes.some(s => !s.variantId))}
-                className="w-full h-12"
-              >
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                {cartLoading ? 'Adding...' : `Add ${quantity} ${quantity === 1 ? 'Item' : 'Items'} to Bag`}
-              </Button>
-            </div>
-
-            {/* Product Features */}
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-medium">Features</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Truck className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">Free shipping on orders over ₹2,999</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RotateCcw className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">Free returns within 30 days</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">2-year warranty included</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+        {/* Fullscreen Image Viewer */}
+        {product && images.length > 0 && (
+          <FullscreenImageViewer
+            isOpen={isViewerOpen}
+            onOpenChange={setIsViewerOpen}
+            src={images[selectedImageIndex]?.node.url || ''}
+            alt={images[selectedImageIndex]?.node.altText || product.title}
+            title={product.title}
+            assets={images.map((img, idx) => ({
+              src: img.node.url,
+              alt: img.node.altText || `${product.title} view ${idx + 1}`,
+              title: product.title,
+              locked: img.node.locked || false,
+            }))}
+            initialIndex={selectedImageIndex}
+            canViewLocked={canViewLocked}
+          />
+        )}
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

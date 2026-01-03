@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SimpleLoginModal } from '@/components/SimpleLoginModal';
-import { auth, users, orders, credits, products, payments, type User as UserType, type Order, type Product } from '@/lib/api';
+import { auth, users, orders, products, payments, type User as UserType, type Order, type Product } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
@@ -21,7 +21,6 @@ const Profile = () => {
   const [likedProductsDetails, setLikedProductsDetails] = useState<Product[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userCredits, setUserCredits] = useState(0);
   const [hasPendingPayments, setHasPendingPayments] = useState(false);
   const { toast } = useToast();
   
@@ -91,16 +90,6 @@ const Profile = () => {
             console.log('📦 Profile: Orders loaded:', userOrdersData.length);
             setUserOrders(userOrdersData);
             
-            // Load user credits
-            console.log('💳 Profile: Loading credits...');
-            try {
-              const creditData = await credits.getByUserId(userId);
-              console.log('💳 Profile: Credits loaded:', creditData?.balance || 0);
-              setUserCredits(creditData?.balance || 0);
-            } catch (creditError) {
-              console.error('❌ Profile: Error loading credits:', creditError);
-              setUserCredits(0);
-            }
             
             // Check for pending payments
             console.log('💳 Profile: Checking pending payments...');
@@ -135,7 +124,7 @@ const Profile = () => {
     const likedKey = userId ? `2xy-liked-products-${userId}` : '2xy-liked-products';
     const historyKey = userId ? `2xy-search-history-${userId}` : '2xy-search-history';
     
-    // Load liked products and search history from localStorage
+    // Load liked articles and search history from localStorage
     const liked = localStorage.getItem(likedKey);
     const history = localStorage.getItem(historyKey);
     
@@ -151,7 +140,7 @@ const Profile = () => {
           .filter((p): p is Product => p !== undefined);
         setLikedProductsDetails(productDetails);
       } catch (error) {
-        console.error('Error loading liked products details:', error);
+        console.error('Error loading liked articles details:', error);
       }
     }
     
@@ -169,7 +158,6 @@ const Profile = () => {
     // Clear user-specific data
     setUser(null);
     setUserOrders([]);
-    setUserCredits(0);
     setLikedProducts([]);
     setLikedProductsDetails([]);
     setSearchHistory([]);
@@ -265,23 +253,11 @@ const Profile = () => {
               <User className="w-12 h-12 text-white" />
             </motion.div>
             <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent">
-              Welcome to MONTEVELORIS
+              Welcome to TOESPRING
             </h2>
             <p className="text-muted-foreground mb-8 leading-relaxed">
-              Sign in to your account to view your profile, track orders, and start earning exclusive MONTEVELORIS credits
+              Sign in to your account to view your profile and track orders
             </p>
-            
-            {/* Benefits preview */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="p-3 bg-gradient-to-br from-accent/5 to-primary/5 rounded-xl border border-accent/10">
-                <ShoppingBag className="w-6 h-6 text-accent mx-auto mb-2" />
-                <p className="text-xs font-medium text-center">Order Tracking</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-accent/5 to-primary/5 rounded-xl border border-accent/10">
-                <CreditCard className="w-6 h-6 text-accent mx-auto mb-2" />
-                <p className="text-xs font-medium text-center">Earn Credits</p>
-              </div>
-            </div>
             
             <motion.div
               whileHover={{ scale: 1.02 }}
@@ -398,15 +374,11 @@ const Profile = () => {
                 <Calendar className="w-4 h-4 text-accent" />
                 <span className="font-medium">Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recently joined'}</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 to-primary/10 rounded-full border border-accent/20">
-                <CreditCard className="w-4 h-4 text-accent" />
-                <span className="font-medium">{userCredits} Credits Available</span>
-              </div>
             </motion.div>
             
             {/* Enhanced Quick Stats */}
             <motion.div 
-              className="grid grid-cols-3 gap-6 mb-8 max-w-lg mx-auto"
+              className="grid grid-cols-2 gap-6 mb-8 max-w-md mx-auto"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.6 }}
@@ -431,16 +403,6 @@ const Profile = () => {
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">Liked</div>
               </motion.div>
-              <motion.div 
-                className="p-4 bg-gradient-to-br from-accent/10 via-accent/5 to-primary/5 rounded-xl border border-accent/20 shadow-sm"
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent mb-1">
-                  {userCredits}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">Credits</div>
-              </motion.div>
             </motion.div>
 
             {/* Enhanced Action Buttons */}
@@ -451,15 +413,6 @@ const Profile = () => {
               transition={{ duration: 0.5, delay: 0.7 }}
             >
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link to="/cart">
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center gap-2 border-accent/30 hover:bg-accent/5 hover:border-accent/50"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    View Cart
-                  </Button>
-                </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button 
@@ -487,7 +440,7 @@ const Profile = () => {
             <TabsList className="grid w-full grid-cols-4 h-14 bg-gradient-to-r from-accent/5 via-primary/5 to-accent/5 border border-accent/10 rounded-xl p-1">
               <TabsTrigger 
                 value="orders" 
-                className={`h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 relative ${
+                className={`h-full rounded-lg text-[#1f2937] dark:text-[#06b6d4] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 relative ${
                   hasPendingPayments ? 'ring-2 ring-orange-500 ring-offset-2' : ''
                 }`}
               >
@@ -499,21 +452,21 @@ const Profile = () => {
               </TabsTrigger>
               <TabsTrigger 
                 value="liked" 
-                className="h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                className="h-full rounded-lg text-[#1f2937] dark:text-[#06b6d4] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
               >
                 <Heart className="h-4 w-4 mr-2" />
-                Liked Products
+                Liked Articles
               </TabsTrigger>
               <TabsTrigger 
                 value="history" 
-                className="h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                className="h-full rounded-lg text-[#1f2937] dark:text-[#06b6d4] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Search History
               </TabsTrigger>
               <TabsTrigger 
                 value="personal" 
-                className="h-full rounded-lg text-[#1f2937] dark:text-[#d97706] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                className="h-full rounded-lg text-[#1f2937] dark:text-[#06b6d4] data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
               >
                 <User className="h-4 w-4 mr-2" />
                 Personal Info
@@ -523,7 +476,7 @@ const Profile = () => {
             <TabsContent value="liked" className="mt-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Liked Products</CardTitle>
+                  <CardTitle>Liked Articles</CardTitle>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -588,10 +541,10 @@ const Profile = () => {
                       >
                         <Heart className="h-10 w-10 opacity-50" />
                       </motion.div>
-                      <p className="text-lg font-medium mb-2">No liked products yet</p>
-                      <p className="text-sm">Heart products to save them here</p>
+                      <p className="text-lg font-medium mb-2">No liked articles yet</p>
+                      <p className="text-sm">Heart articles to save them here</p>
                       <p className="text-xs mt-2 inline-flex items-center px-4 py-2 bg-gradient-to-r from-accent/5 to-primary/5 rounded-full border border-accent/10">
-                        💡 Tip: Click the heart icon on any product to add it to your favorites
+                        💡 Tip: Click the heart icon on any article to add it to your favorites
                       </p>
                     </div>
                   )}
@@ -667,8 +620,6 @@ const Profile = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Delivery</h3>
-                    
                     <div className="space-y-2">
                       <Label htmlFor="country">Country</Label>
                       <Select

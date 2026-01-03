@@ -28,6 +28,7 @@ export interface ShopifyProduct {
         id: string;
         url: string;
         altText: string | null;
+        locked?: boolean;
       };
     }>;
   };
@@ -207,7 +208,7 @@ export async function getCart(cartId: string): Promise<Cart> {
 // Helper to find product by variantId
 async function findProductByVariantId(variantId: string): Promise<{ product: ShopifyProduct; variant: ShopifyProduct['variants']['edges'][number]['node'] } | null> {
   try {
-    // Get all products and find the one containing this variant
+    // Get all articles and find the one containing this variant
     const products = await getAllProducts(100);
     for (const product of products) {
       const variant = product.variants.edges.find(edge => edge.node.id === variantId);
@@ -344,6 +345,7 @@ function mapConvexProduct(p: Product): ShopifyProduct {
           id: `${p._id}-img-${idx}`,
           url: img.url,
           altText: img.altText ?? null,
+          locked: img.locked || false,
         },
       })),
     },
@@ -459,6 +461,20 @@ export async function getCustomer(accessToken: string): Promise<ShopifyCustomer 
   } catch (error) {
     console.error('Error fetching customer:', error);
     return null;
+  }
+}
+
+// Check if current user can view locked content
+export async function canViewLockedContent(): Promise<boolean> {
+  if (!isCustomerLoggedIn()) return false;
+  try {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) return false;
+    const user = await convex.query(api.users.getById, { id: userId as Id<"users"> });
+    return user?.isApproved === true;
+  } catch (error) {
+    console.error('Error checking approval status:', error);
+    return false;
   }
 }
 

@@ -1,7 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// Get all products
+// Get all articles
 export const getAll = query({
   args: {
     limit: v.optional(v.number()),
@@ -33,7 +33,7 @@ export const getAll = query({
   },
 });
 
-// Get product by handle
+// Get article by handle
 export const getByHandle = query({
   args: { handle: v.string() },
   handler: async (ctx, args) => {
@@ -51,7 +51,7 @@ export const getByHandle = query({
   },
 });
 
-// Get product by ID
+// Get article by ID
 export const getById = query({
   args: { id: v.id("products") },
   handler: async (ctx, args) => {
@@ -59,7 +59,7 @@ export const getById = query({
   },
 });
 
-// Search products
+// Search articles
 export const search = query({
   args: {
     query: v.string(),
@@ -89,7 +89,7 @@ export const search = query({
   },
 });
 
-// Create product (admin)
+// Create article (admin)
 export const create = mutation({
   args: {
     title: v.string(),
@@ -101,6 +101,7 @@ export const create = mutation({
     images: v.array(v.object({
       url: v.string(),
       altText: v.optional(v.string()),
+      locked: v.optional(v.boolean()),
     })),
     variants: v.array(v.object({
       id: v.string(),
@@ -131,7 +132,7 @@ export const create = mutation({
   },
 });
 
-// Update product (admin)
+// Update article (admin)
 export const update = mutation({
   args: {
     id: v.id("products"),
@@ -142,6 +143,7 @@ export const update = mutation({
     images: v.optional(v.array(v.object({
       url: v.string(),
       altText: v.optional(v.string()),
+      locked: v.optional(v.boolean()),
     }))),
     variants: v.optional(v.array(v.object({
       id: v.string(),
@@ -171,7 +173,7 @@ export const update = mutation({
   },
 });
 
-// Delete product (admin)
+// Delete article (admin)
 export const deleteProduct = mutation({
   args: { id: v.id("products") },
   handler: async (ctx, args) => {
@@ -179,7 +181,7 @@ export const deleteProduct = mutation({
   },
 });
 
-// Archive/Unarchive product (admin)
+// Archive/Unarchive article (admin)
 export const archive = mutation({
   args: {
     id: v.id("products"),
@@ -193,7 +195,7 @@ export const archive = mutation({
   },
 });
 
-// Get all products including archived (admin only)
+// Get all articles including archived (admin only)
 export const getAllIncludingArchived = query({
   args: {
     limit: v.optional(v.number()),
