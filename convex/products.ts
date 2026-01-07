@@ -164,6 +164,18 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
+    
+    // If price is updated and variants are not explicitly provided, update all variant prices
+    if (args.price !== undefined && args.variants === undefined) {
+      const product = await ctx.db.get(id);
+      if (product && product.variants) {
+        updates.variants = product.variants.map(variant => ({
+          ...variant,
+          price: args.price!,
+        }));
+      }
+    }
+    
     await ctx.db.patch(id, {
       ...updates,
       updatedAt: Date.now(),

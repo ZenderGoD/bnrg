@@ -41,6 +41,8 @@ export interface ShopifyProduct {
           currencyCode: string;
         };
         availableForSale: boolean;
+        selectedOptions?: Array<{ name: string; value: string }>;
+        quantityAvailable?: number;
         image?: {
           url: string;
           altText?: string;
@@ -357,6 +359,8 @@ function mapConvexProduct(p: Product): ShopifyProduct {
             currencyCode: p.currencyCode || "INR",
           },
           availableForSale: v.availableForSale,
+          selectedOptions: v.selectedOptions,
+          quantityAvailable: ('quantity' in v ? (v as { quantity: number }).quantity : undefined),
           image: v.image,
         },
       })),
@@ -467,7 +471,21 @@ export async function getCustomerOrders(
   first = 10,
 ): Promise<ShopifyOrder[]> {
   try {
-    const list = await convex.query(api.orders.getByUserId, { userId: accessToken as Id<"users"> }) as ConvexOrder[] | null | undefined;
+    const list = await convex.query(api.orders.getByUserId, { userId: accessToken as Id<"users"> }) as Array<{
+      _id: string;
+      orderNumber: number;
+      totalPrice: number;
+      currencyCode: string;
+      items: Array<{
+        title: string;
+        quantity: number;
+        variantId: string;
+        image?: string;
+      }>;
+      fulfillmentStatus?: string;
+      financialStatus?: string;
+      createdAt?: number;
+    }> | null | undefined;
 
     return (list || []).slice(0, first).map((o) => ({
       id: o._id,

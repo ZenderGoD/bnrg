@@ -105,12 +105,12 @@ export default function Product() {
     if (!product) return [];
     
     const colorGroups: { [key: string]: Array<{
-      node: {
-        id: string;
-        title: string;
-        availableForSale: boolean;
-        selectedOptions: Array<{ name: string; value: string }>;
-      };
+      id: string;
+      title: string;
+      availableForSale: boolean;
+      selectedOptions?: Array<{ name: string; value: string }>;
+      quantityAvailable?: number;
+      image?: { url: string; altText?: string };
     }> } = {};
     product.variants.edges.forEach(edge => {
       const variant = edge.node;
@@ -125,7 +125,7 @@ export default function Product() {
     return Object.entries(colorGroups).map(([color, variants]) => ({
       color,
       variants,
-      image: variants[0].image?.url || product.images.edges[0]?.node.url
+      image: variants[0]?.image?.url || product.images.edges[0]?.node.url
     }));
   };
 
@@ -143,7 +143,7 @@ export default function Product() {
       id: variant.id,
       size: variant.selectedOptions?.find(opt => opt.name.toLowerCase() === 'size')?.value || variant.title,
       available: variant.availableForSale && (variant.quantityAvailable ? variant.quantityAvailable > 0 : true),
-      price: variant.price.amount
+      price: product.variants.edges.find(e => e.node.id === variant.id)?.node.price.amount || '0.00'
     }));
   };
 
@@ -282,7 +282,9 @@ export default function Product() {
   const images = product.images.edges;
   const variants = product.variants.edges;
   const currentVariant = getCurrentVariant();
-  const price = currentVariant ? parseFloat(currentVariant.price.amount) : parseFloat(product.priceRange.minVariantPrice.amount);
+  // Use product-level price as source of truth (updated by admin)
+  // This ensures price updates from admin page reflect correctly
+  const price = parseFloat(product.priceRange.minVariantPrice.amount);
   const mrp = product.mrp;
   const discountPercentage = mrp && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
   const colorVariants = getVariantsByColor();
@@ -765,7 +767,7 @@ export default function Product() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Truck className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">Free shipping on orders over ₹2,999</span>
+                  <span className="text-sm">Free shipping all over India</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <RotateCcw className="h-5 w-5 text-muted-foreground" />

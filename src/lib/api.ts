@@ -26,6 +26,7 @@ export interface Product {
     title: string;
     price: number;
     availableForSale: boolean;
+    quantity: number;
     selectedOptions?: Array<{
       name: string;
       value: string;
