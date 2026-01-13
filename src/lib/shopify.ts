@@ -4,6 +4,7 @@
 import { ConvexReactClient } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { sanitizeConvexError } from "./errorHandler";
 import type { Product, User } from "./api";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL || "");
@@ -374,7 +375,9 @@ export async function getAllProducts(first = 20): Promise<ShopifyProduct[]> {
     const list = await convex.query(api.products.getAll, { limit: first });
     return (list || []).map(mapConvexProduct);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    if (import.meta.env.DEV) {
+      console.warn("Products fetch failed:", sanitizeConvexError(error));
+    }
     return [];
   }
 }
@@ -387,7 +390,9 @@ export async function getProductsByCollection(
     const list = await convex.query(api.products.getAll, { limit: first, collection: handle });
     return (list || []).map(mapConvexProduct);
   } catch (error) {
-    console.error('Error fetching collection products:', error);
+    if (import.meta.env.DEV) {
+      console.warn("Collection products fetch failed:", sanitizeConvexError(error));
+    }
     return [];
   }
 }
@@ -397,7 +402,9 @@ export async function getProduct(handle: string): Promise<ShopifyProduct | null>
     const p = await convex.query(api.products.getByHandle, { handle });
     return p ? mapConvexProduct(p) : null;
   } catch (error) {
-    console.error('Error fetching product:', error);
+    if (import.meta.env.DEV) {
+      console.warn("Product fetch failed:", sanitizeConvexError(error));
+    }
     return null;
   }
 }
@@ -407,7 +414,9 @@ export async function getProductById(id: string): Promise<ShopifyProduct | null>
     const p = await convex.query(api.products.getById, { id: id as Id<"products"> });
     return p ? mapConvexProduct(p) : null;
   } catch (error) {
-    console.error('Error fetching product by ID:', error);
+    if (import.meta.env.DEV) {
+      console.warn("Product by ID fetch failed:", sanitizeConvexError(error));
+    }
     return null;
   }
 }
@@ -420,7 +429,9 @@ export async function searchProducts(
     const list = await convex.query(api.products.search, { query: searchTerm, limit: first });
     return (list || []).map(mapConvexProduct);
   } catch (error) {
-    console.error('Error searching products:', error);
+    if (import.meta.env.DEV) {
+      console.warn("Product search failed:", sanitizeConvexError(error));
+    }
     return [];
   }
 }

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllProducts, getProductsByCollection, ShopifyProduct } from '@/lib/shopify';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { FeaturedCollection, useFeaturedCollections } from '@/hooks/useFeaturedCollections';
 
 interface WomensCategoriesDropdownProps {
   isVisible: boolean;
@@ -33,8 +32,8 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  // Fetch featured collections from Convex
-  const featuredCollections = useQuery(api.homepage.getFeaturedCollections);
+  // Fetch featured collections from Convex (safe: won't throw when backend is down)
+  const { featuredCollections } = useFeaturedCollections(isVisible);
 
   useEffect(() => {
     const fetchCollectionProducts = async () => {
@@ -83,7 +82,7 @@ export function WomensCategoriesDropdown({ isVisible }: WomensCategoriesDropdown
     }
   }, [isVisible, featuredCollections]);
 
-  const handleCategoryClick = (collection: typeof featuredCollections[0]) => {
+  const handleCategoryClick = (collection: FeaturedCollection) => {
     if (collection.linkUrl) {
       if (collection.linkUrl.startsWith('http')) {
         window.location.href = collection.linkUrl;

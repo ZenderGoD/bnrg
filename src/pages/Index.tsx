@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
 import { Hero } from '@/components/Hero';
 import { ProductGrid } from '@/components/ProductGrid';
 // import { InteractiveComfortSection } from '@/components/InteractiveComfortSection';
 import { getAllProducts, getProductsByCollection, ShopifyProduct } from '@/lib/shopify';
 import { ArrowRight, Mail, FileText, Shield, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useFeaturedCollections } from '@/hooks/useFeaturedCollections';
 
 const Index = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
@@ -19,8 +18,8 @@ const Index = () => {
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 8;
   
-  // Fetch featured collections from Convex
-  const featuredCollections = useQuery(api.homepage.getFeaturedCollections);
+  // Fetch featured collections from Convex (safe: won't throw when backend is down)
+  const { featuredCollections, error: featuredCollectionsError } = useFeaturedCollections(true);
   
   // Store products for each featured collection
   const [collectionProducts, setCollectionProducts] = useState<Record<string, ShopifyProduct[]>>({});
@@ -125,6 +124,17 @@ const Index = () => {
     <div className="w-full">
       {/* Hero Section */}
       <Hero />
+
+      {/* Backend warning (Convex) */}
+      {featuredCollectionsError && (
+        <div className="w-full bg-destructive/10 border-b border-border">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-3">
+            <p className="text-sm text-foreground">
+              {featuredCollectionsError}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Brand Information Section */}
       <motion.section

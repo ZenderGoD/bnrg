@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { FeaturedCollection, useFeaturedCollections } from '@/hooks/useFeaturedCollections';
 
 interface MobileCategoriesSidebarProps {
   isOpen: boolean;
@@ -34,8 +33,8 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
   const [currentView, setCurrentView] = useState<'main' | 'men' | 'women' | 'kids'>('main');
   const navigate = useNavigate();
   
-  // Fetch featured collections from Convex
-  const featuredCollections = useQuery(api.homepage.getFeaturedCollections);
+  // Fetch featured collections from Convex (safe: won't throw when backend is down)
+  const { featuredCollections } = useFeaturedCollections(isOpen);
 
   // Auto-navigate to selected gender when sidebar opens
   useEffect(() => {
@@ -51,7 +50,7 @@ export function MobileCategoriesSidebar({ isOpen, onClose, selectedGender }: Mob
   // If selectedGender is provided, we should never show the main view
   const shouldShowMainView = !selectedGender;
 
-  const handleCategoryClick = (collection: typeof featuredCollections[0]) => {
+  const handleCategoryClick = (collection: FeaturedCollection) => {
     if (collection.linkUrl) {
       if (collection.linkUrl.startsWith('http')) {
         window.location.href = collection.linkUrl;

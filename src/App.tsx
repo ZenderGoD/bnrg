@@ -13,6 +13,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PreLoader } from "@/components/PreLoader";
 import { Chatbot } from "@/components/Chatbot";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import Index from "./pages/Index";
 import Men from "./pages/Men";
 import Women from "./pages/Women";
@@ -105,7 +106,9 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <ChatbotProvider>
-                <AppWithRoutes />
+                <AppErrorBoundary>
+                  <AppWithRoutes />
+                </AppErrorBoundary>
               </ChatbotProvider>
             </BrowserRouter>
           </TooltipProvider>
